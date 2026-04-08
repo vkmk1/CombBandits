@@ -1,0 +1,33 @@
+# Experiment 3: Quick smoke test (use this to verify everything works)
+name: exp3_quick_test
+
+T: 1000
+n_seeds: 3
+log_interval: 500
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+
+environments:
+  - type: synthetic_bernoulli
+    d: 20
+    m: 5
+    gap_type: uniform
+    delta_min: 0.1
+
+oracles:
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.0
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.3
+    K: 3
+  - type: simulated
+    corruption_type: consistent_wrong
+    epsilon: 1.0
+    K: 3

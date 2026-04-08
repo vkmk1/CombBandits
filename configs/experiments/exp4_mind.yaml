@@ -1,0 +1,36 @@
+# Experiment 4: MIND news recommendation (simulated version)
+# Real MIND data requires preprocessing; use MINDEnvSimulated for development
+name: exp4_mind
+
+T: 2000
+n_seeds: 20
+log_interval: 500
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+
+environments:
+  - type: mind_simulated
+    d: 200
+    m: 5
+    n_categories: 10
+
+oracles:
+  # Simulated oracle with realistic partial reliability
+  - type: simulated
+    corruption_type: partial_overlap
+    epsilon: 0.15
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.3
+    K: 3

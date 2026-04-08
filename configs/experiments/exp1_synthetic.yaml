@@ -1,0 +1,77 @@
+# Experiment 1: Synthetic semi-bandits with controlled corruption
+# Validates theoretical regret predictions (Corollary 1: two-regime behavior)
+name: exp1_synthetic
+
+T: 100000
+n_seeds: 20
+log_interval: 10000
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - opro_bandit
+  - corrupt_robust_cucb
+  - warm_start_cts
+  - exp4
+
+environments:
+  - type: synthetic_bernoulli
+    d: 50
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 200
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+oracles:
+  # Corruption type 1: Uniform
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.0
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.3
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.5
+    K: 3
+  # Corruption type 2: Adversarial
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.3
+    K: 3
+  # Corruption type 3: Partial overlap
+  - type: simulated
+    corruption_type: partial_overlap
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: partial_overlap
+    epsilon: 0.3
+    K: 3
+  # Corruption type 4: Consistently wrong (critical test)
+  - type: simulated
+    corruption_type: consistent_wrong
+    epsilon: 1.0
+    K: 3

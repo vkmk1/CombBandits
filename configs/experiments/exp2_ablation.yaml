@@ -1,0 +1,48 @@
+# Experiment 2: Ablation studies
+# Tests K (re-queries), h_max (hedge size), trust score components
+name: exp2_ablation
+
+T: 50000
+n_seeds: 20
+log_interval: 10000
+
+agents:
+  - llm_cucb_at
+  - cucb  # Reference baseline
+
+environments:
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+# Run each ablation separately by overriding agent_configs
+# Ablation A: Vary K
+oracles:
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.2
+    K: 1
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.2
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.2
+    K: 5
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.2
+    K: 10
+  # Consistently wrong: tests trust score ablation
+  - type: simulated
+    corruption_type: consistent_wrong
+    epsilon: 1.0
+    K: 3
+
+agent_configs:
+  llm_cucb_at:
+    # Default h_max (sqrt(d)); ablate via separate configs
+    h_max: 10

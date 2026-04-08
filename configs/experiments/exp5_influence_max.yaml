@@ -1,0 +1,35 @@
+# Experiment 5: Influence maximization (simulated version)
+# Real SNAP graphs require download; use InfluenceMaxEnvSimulated for development
+name: exp5_influence_max
+
+T: 5000
+n_seeds: 20
+log_interval: 1000
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+
+environments:
+  - type: influence_max_simulated
+    d: 200
+    m: 10
+    n_communities: 5
+
+oracles:
+  - type: simulated
+    corruption_type: partial_overlap
+    epsilon: 0.2
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.3
+    K: 3
