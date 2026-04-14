@@ -66,11 +66,9 @@ def main():
         print(f"Task list written to {path}")
 
     elif args.command == "plot":
-        from .analysis.plots import plot_regret_curves, plot_corruption_comparison
-        plot_regret_curves(args.results, f"{args.output_dir}/regret_curves.pdf",
-                          filter_corruption=args.corruption, filter_epsilon=args.epsilon)
-        plot_corruption_comparison(args.results, f"{args.output_dir}/corruption_comparison.pdf")
-        print(f"Plots saved to {args.output_dir}/")
+        from .analysis.plots import generate_all_figures
+        generate_all_figures(args.results, args.output_dir)
+        print(f"All figures saved to {args.output_dir}/")
 
     elif args.command == "metrics":
         from .analysis.metrics import load_results, compute_metrics

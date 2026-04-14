@@ -82,6 +82,25 @@ def _run_single(task: dict) -> dict:
 
     result = run_trial(agent, env, T=task["T"], seed=task["seed"], log_interval=task.get("log_interval", 5000))
 
+    # Extract trust diagnostics if available
+    trust_kappa = []
+    trust_rho = []
+    trust_tau = []
+    hedge_sizes = []
+    for rr in result.rounds:
+        trust_kappa.append(rr.kappa_t)
+        trust_rho.append(rr.rho_t)
+        trust_tau.append(rr.trust_score)
+        hedge_sizes.append(rr.hedge_size)
+
+    # Compute overlap with optimal set per round (for oracle quality measurement)
+    optimal_set = set(env.optimal_set)
+    overlap_fractions = []
+    for rr in result.rounds:
+        if rr.llm_suggestion is not None:
+            overlap = len(set(rr.llm_suggestion) & optimal_set) / env.m
+            overlap_fractions.append(overlap)
+
     # Serialize to dict for cross-process return
     return {
         "agent": agent_name,
@@ -96,6 +115,14 @@ def _run_single(task: dict) -> dict:
         "regret_curve": result.regret_curve.tolist(),
         "oracle_queries": oracle.total_queries if hasattr(oracle, "total_queries") else 0,
         "oracle_tokens": oracle.total_tokens if hasattr(oracle, "total_tokens") else 0,
+        # Trust diagnostics (LLM-CUCB-AT only; None for others)
+        "trust_kappa": trust_kappa if any(x is not None for x in trust_kappa) else None,
+        "trust_rho": trust_rho if any(x is not None for x in trust_rho) else None,
+        "trust_tau": trust_tau if any(x is not None for x in trust_tau) else None,
+        "hedge_sizes": hedge_sizes if any(x > 0 for x in hedge_sizes) else None,
+        "oracle_overlap_fractions": overlap_fractions if overlap_fractions else None,
+        # Subsampled regret curve at 100 evenly spaced points (for compact storage)
+        "regret_100": result.regret_curve[np.linspace(0, len(result.regret_curve)-1, 100, dtype=int)].tolist() if len(result.regret_curve) > 100 else result.regret_curve.tolist(),
     }
 
 

@@ -78,9 +78,13 @@ def run_trial(
             rr.kappa_t = last_trust.get("kappa")
             rr.rho_t = last_trust.get("rho")
             rr.trust_score = last_trust.get("tau")
+            rr.hedge_size = last_trust.get("hedge_size", 0)
 
         if hasattr(agent, '_last_oracle_response') and agent._last_oracle_response is not None:
             rr.llm_suggestion = agent._last_oracle_response.suggested_set
+
+        if hasattr(agent, '_force_fallback'):
+            rr.is_fallback = agent._force_fallback
 
         result.rounds.append(rr)
 

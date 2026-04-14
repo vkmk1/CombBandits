@@ -129,16 +129,18 @@ class LLMCUCBATAgent(Agent):
         rho_t = self._compute_posterior_validation(response.suggested_set)
         tau_t = min(kappa_t, rho_t)
 
+        # Step 3: Build reduced set with hedge
+        h_t = self._compute_hedge_size(tau_t)
+        reduced_set = self._build_reduced_set(response.suggested_set, h_t)
+
         self.trust_history.append({
             "round": self.t,
             "kappa": kappa_t,
             "rho": rho_t,
             "tau": tau_t,
+            "hedge_size": h_t,
+            "reduced_set_size": len(reduced_set),
         })
-
-        # Step 3: Build reduced set with hedge
-        h_t = self._compute_hedge_size(tau_t)
-        reduced_set = self._build_reduced_set(response.suggested_set, h_t)
 
         # Step 4: UCB play on reduced set
         return self.top_m_by_ucb(candidates=reduced_set)

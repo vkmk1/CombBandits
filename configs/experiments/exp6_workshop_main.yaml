@@ -1,0 +1,89 @@
+# Experiment 6: ICML Workshop main experiment
+# Focused config that produces all figures needed for an 8-page workshop paper.
+# Each oracle config maps to a specific theoretical prediction to validate.
+#
+# Estimated runtime: ~3 hours on DELLA with 50 parallel CPU tasks.
+name: exp6_workshop_main
+
+T: 50000  # Shorter than NeurIPS (10^5) but sufficient for workshop
+n_seeds: 30  # 30 seeds for proper statistical significance
+log_interval: 10000
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+  - corrupt_robust_cucb
+
+environments:
+  # Three dimension values to validate dimension-reduction prediction
+  - type: synthetic_bernoulli
+    d: 50
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 200
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+oracles:
+  # --- Validates Corollary 1.1: Perfect oracle ---
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.0
+    K: 3
+
+  # --- Validates Theorem 2: corruption cost scaling ---
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.05
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.2
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.3
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.5
+    K: 3
+
+  # --- Validates Corollary 1.4: consistently wrong oracle ---
+  # This is the HEADLINE RESULT: composite trust catches it
+  - type: simulated
+    corruption_type: consistent_wrong
+    epsilon: 1.0
+    K: 3
+
+  # --- Validates adversarial robustness ---
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.1
+    K: 3
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.3
+    K: 3
+
+  # --- Validates graded quality model ---
+  - type: simulated
+    corruption_type: partial_overlap
+    epsilon: 0.2
+    K: 3

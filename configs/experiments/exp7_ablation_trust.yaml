@@ -1,0 +1,50 @@
+# Experiment 7: Trust score component ablation
+# Tests consistency-only vs validation-only vs composite trust.
+# This is done by creating LLM-CUCB-AT variants.
+#
+# Since the current agent doesn't support trust-mode flags via config,
+# we test this indirectly: run under consistent_wrong corruption and
+# compare LLM-CUCB-AT (composite) vs ELLM-Adapted (no trust) vs
+# LLM-Greedy (no trust). The trust trajectory plots show WHY
+# composite trust works.
+name: exp7_ablation_trust
+
+T: 30000
+n_seeds: 30
+log_interval: 10000
+
+agents:
+  - cucb
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+
+environments:
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+oracles:
+  # Perfect oracle: everyone should do well
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.0
+    K: 3
+  # Moderate corruption: LLM-CUCB-AT advantage emerges
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.2
+    K: 3
+  # Consistently wrong: HEADLINE — only LLM-CUCB-AT recovers
+  - type: simulated
+    corruption_type: consistent_wrong
+    epsilon: 1.0
+    K: 3
+  # Adversarial: LLM-CUCB-AT should not be worse than CUCB
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.3
+    K: 3
