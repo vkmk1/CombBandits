@@ -5,7 +5,7 @@
 # Estimated runtime: ~3 hours on DELLA with 50 parallel CPU tasks.
 name: exp6_workshop_main
 
-T: 50000  # Shorter than NeurIPS (10^5) but sufficient for workshop
+T: 100000  # Full NeurIPS-grade horizon (compute is cheap: ~10s per task)
 n_seeds: 30  # 30 seeds for proper statistical significance
 log_interval: 10000
 

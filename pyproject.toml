@@ -28,6 +28,7 @@ dependencies = [
     "aiohttp>=3.9",
     "aiosqlite>=0.19",
     "click>=8.1",
+    "torch>=2.0",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,78 @@
+# Experiment 8: Large-d dimension scaling (GPU-batched)
+#
+# Validates the core theoretical prediction:
+#   LLM-CUCB-AT regret ~ O(sqrt(m * (m + sqrt(d)) * T))  << O(sqrt(m * d * T))  (CUCB)
+#
+# Uses GPU batched runner with 100 seeds per config.
+# 7 values of d from 50 to 5000 — a 100x range demonstrating that the
+# dimension reduction advantage grows with problem scale.
+#
+# Run with: python -m combbandits.cli run-gpu configs/experiments/exp8_scaling_d.yaml \
+#               --output-dir results/exp8_scaling_d
+#
+# Estimated runtime on A100: ~15 minutes total
+name: exp8_scaling_d
+
+T: 100000
+n_seeds: 100
+log_interval: 25000
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+
+environments:
+  - type: synthetic_bernoulli
+    d: 50
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 200
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 500
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 1000
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 2000
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 5000
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+oracles:
+  # Reliable oracle: demonstrates dimension reduction
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.1
+    K: 3
+  # Adversarial: shows graceful degradation at all scales
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.3
+    K: 3
+  # Consistently wrong: shows composite trust works at all scales
+  - type: simulated
+    corruption_type: consistent_wrong
+    epsilon: 1.0
+    K: 3

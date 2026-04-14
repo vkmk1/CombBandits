@@ -44,6 +44,13 @@ def main():
     metrics_parser = subparsers.add_parser("metrics", help="Compute summary metrics")
     metrics_parser.add_argument("results", type=str, help="Path to results JSON")
 
+    # --- run-gpu ---
+    gpu_parser = subparsers.add_parser("run-gpu", help="Run experiments on GPU (batched across seeds)")
+    gpu_parser.add_argument("config", type=str, help="Path to experiment YAML config")
+    gpu_parser.add_argument("--output-dir", type=str, default="results")
+    gpu_parser.add_argument("--device", type=str, default=None, help="Device: cuda, mps, cpu (auto-detected if omitted)")
+    gpu_parser.add_argument("--n-seeds", type=int, default=None, help="Override n_seeds from config")
+
     args = parser.parse_args()
 
     if args.command == "run":
@@ -69,6 +76,29 @@ def main():
         from .analysis.plots import generate_all_figures
         generate_all_figures(args.results, args.output_dir)
         print(f"All figures saved to {args.output_dir}/")
+
+    elif args.command == "run-gpu":
+        import json
+        import yaml
+        import torch
+        from pathlib import Path
+        from .gpu.batched_trial import run_batched_experiment
+
+        with open(args.config) as f:
+            config = yaml.safe_load(f)
+        if args.n_seeds is not None:
+            config["n_seeds"] = args.n_seeds
+
+        device = torch.device(args.device) if args.device else None
+        results = run_batched_experiment(config, device=device)
+
+        out_dir = Path(args.output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        exp_name = config.get("name", "experiment")
+        out_path = out_dir / f"{exp_name}_results.json"
+        with open(out_path, "w") as f:
+            json.dump(results, f, indent=2)
+        logger.info(f"GPU results saved to {out_path} ({len(results)} trials)")
 
     elif args.command == "metrics":
         from .analysis.metrics import load_results, compute_metrics

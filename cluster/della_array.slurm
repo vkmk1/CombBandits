@@ -2,9 +2,9 @@
 #SBATCH --job-name=combbandits
 #SBATCH --output=logs/slurm/%A_%a.out
 #SBATCH --error=logs/slurm/%A_%a.err
-#SBATCH --time=04:00:00
-#SBATCH --mem=8G
-#SBATCH --cpus-per-task=2
+#SBATCH --time=00:30:00
+#SBATCH --mem=4G
+#SBATCH --cpus-per-task=1
 #SBATCH --partition=cpu
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=vk5825@princeton.edu

@@ -177,17 +177,26 @@ bash scripts/run_local.sh exp6_workshop_main --workers 4
 
 ### Experiment Configs at a Glance
 
-| Config | Agents | Envs | Oracles | Seeds | Tasks | Est. Local Time | Purpose |
-|--------|--------|------|---------|-------|-------|-----------------|---------|
-| `exp3_quick_test` | 4 | 1 | 3 | 3 | 36 | ~30s | Verify installation |
-| `exp7_ablation_trust` | 5 | 1 | 4 | 30 | 600 | ~30min | Trust component ablation |
-| `exp2_ablation` | 2 | 1 | 5 | 20 | 200 | ~15min | K and h_max ablation |
-| `exp4_mind` | 6 | 1 | 3 | 20 | 360 | ~20min | News recommendation |
-| `exp5_influence_max` | 6 | 1 | 3 | 20 | 360 | ~45min | Influence maximization |
-| `exp6_workshop_main` | 7 | 3 | 10 | 30 | 6,300 | ~8hrs | Workshop paper (all key results) |
-| `exp1_synthetic` | 9 | 3 | 9 | 20 | 4,860 | ~10hrs | Full NeurIPS benchmark |
+| Config | Agents | Envs | Oracles | Seeds | Tasks | Est. Time (50 workers) | Purpose |
+|--------|--------|------|---------|-------|-------|------------------------|---------|
+| `exp3_quick_test` | 4 | 1 | 3 | 3 | 36 | ~10s | Verify installation |
+| `exp7_ablation_trust` | 5 | 1 | 4 | 30 | 600 | ~3min | Trust component ablation |
+| `exp2_ablation` | 2 | 1 | 5 | 20 | 200 | ~1min | K and h_max ablation |
+| `exp4_mind` | 6 | 1 | 3 | 20 | 360 | ~2min | News recommendation |
+| `exp5_influence_max` | 6 | 1 | 3 | 20 | 360 | ~2min | Influence maximization |
+| `exp6_workshop_main` | 7 | 3 | 10 | 30 | 6,300 | ~35min | Workshop paper (all key results) |
+| `exp1_synthetic` | 9 | 3 | 9 | 20 | 4,860 | ~25min | Full NeurIPS benchmark |
+| `exp8_scaling_d` | 4 | 7 | 3 | 100 | — | **~15min (GPU)** | Large-d dimension scaling (d=50--5000) |
 
-**Recommendation:** For the workshop paper, run `exp6_workshop_main` (covers all theoretical predictions) + `exp7_ablation_trust` (trust ablation) + one of `exp4_mind` or `exp5_influence_max` (real-world domain).
+**Note on runtimes:** CPU experiments: each task runs 0.1--10 seconds (pure numpy). GPU experiments: each (agent, env, oracle) group runs all seeds in parallel on one GPU.
+
+**Recommendation:** For the workshop paper, run:
+1. `exp6_workshop_main` (CPU or GPU) — main results across corruption types
+2. `exp7_ablation_trust` (CPU or GPU) — trust component ablation
+3. `exp4_mind` + `exp5_influence_max` (CPU) — real-world domains
+4. **`exp8_scaling_d` (GPU)** — the strongest figure: dimension reduction from d=50 to d=5000
+
+Total wall time on DELLA: **~1 hour** (CPU array jobs + 1 GPU job).
 
 ---
 
@@ -267,15 +276,29 @@ done
 
 ### SLURM Resource Usage
 
-All experiments are **CPU-only** — no GPU allocation needed.
+All experiments are **CPU-only** — no GPU allocation needed. Each task takes 0.1--10 seconds of compute. Do **not** waste A100 GPU-hours on these; use the `cpu` partition.
 
 | Resource | Setting | Why |
 |----------|---------|-----|
-| Partition | `cpu` | No torch/GPU dependencies; all numpy/scipy |
-| Memory | 8GB per task | Sufficient for d=200, T=100K |
-| CPUs | 2 per task | Single-threaded bandit loop + I/O |
-| Time | 4 hours per task | Conservative; most finish in <30min |
+| Partition | `cpu` | No torch/GPU dependencies; pure numpy/scipy |
+| Memory | 4GB per task | d=200, T=100K fits easily |
+| CPUs | 1 per task | Single-threaded bandit loop |
+| Time | 30 min per task | Conservative; most tasks finish in <15 seconds |
 | Concurrency | 50 tasks max (`%50`) | Avoids flooding the scheduler |
+
+**If you only have GPU allocation:** You can still run on GPU nodes (the CPU works fine), but it wastes your allocation. Request a single GPU node and use `--workers 32` locally instead of SLURM arrays:
+
+```bash
+# Interactive session on a GPU node, using its CPUs
+salloc --partition=gpu --gres=gpu:1 --cpus-per-task=32 --mem=32G --time=02:00:00
+conda activate combbandits
+# Run all experiments sequentially with 32 local workers (no SLURM arrays)
+for EXP in exp6_workshop_main exp7_ablation_trust exp4_mind exp5_influence_max; do
+    python -m combbandits.cli run configs/experiments/${EXP}.yaml \
+        --output-dir results/${EXP} --workers 32
+done
+# Total time: ~1.5 hours using 32 CPU cores on a single node
+```
 
 The GPU SLURM template (`della_gpu.slurm`) exists for future experiments with local LLMs (e.g., Llama-3-8B via vLLM), but is **not needed** for any current experiment.
 
@@ -529,16 +552,72 @@ The critical test is `test_consistent_wrong_oracle`: it verifies that LLM-CUCB-A
 
 ---
 
+## GPU-Batched Execution
+
+The `gpu/` module provides vectorized execution of all 9 agents across hundreds of seeds simultaneously on a single GPU. Agent state is stored as `(n_seeds, d)` tensors; arm selection, reward sampling, and updates are fully batched.
+
+### Why GPU?
+
+The CPU runner is fast for small d. But the paper's strongest claim — that LLM-CUCB-AT achieves O(sqrt(m(m+sqrt(d))T)) instead of CUCB's O(sqrt(mdT)) — becomes most compelling at **large d**. At d=5000, the theoretical advantage is 25x. The GPU runner makes d=5000 with 100 seeds practical.
+
+### Running GPU Experiments
+
+```bash
+# Run the large-d scaling experiment (the paper's strongest figure)
+python -m combbandits.cli run-gpu configs/experiments/exp8_scaling_d.yaml \
+    --output-dir results/exp8_scaling_d
+
+# Run any existing config on GPU with more seeds
+python -m combbandits.cli run-gpu configs/experiments/exp6_workshop_main.yaml \
+    --output-dir results/exp6_workshop_main --n-seeds 100
+
+# Force a specific device
+python -m combbandits.cli run-gpu configs/experiments/exp8_scaling_d.yaml \
+    --device cuda --output-dir results/exp8_scaling_d
+```
+
+### GPU on DELLA
+
+```bash
+# Submit the scaling experiment as a single GPU job
+sbatch --export=CONFIG_NAME=exp8_scaling_d cluster/della_gpu_batched.slurm
+
+# Or run any config on GPU with custom seed count
+sbatch --export=CONFIG_NAME=exp6_workshop_main,N_SEEDS=100 cluster/della_gpu_batched.slurm
+```
+
+### GPU Module Structure
+
+```
+src/combbandits/gpu/
+├── device.py          # Auto-detect CUDA > MPS > CPU
+├── batched_env.py     # Batched environments (torch.bernoulli for all seeds)
+├── batched_oracle.py  # Batched simulated CLO (tensor set operations)
+├── batched_agents.py  # All 9 agents with (n_seeds, d) tensor state
+└── batched_trial.py   # Batched trial runner + experiment orchestrator
+```
+
+### Estimated GPU Runtimes (A100 80GB)
+
+| Experiment | d range | Seeds | Time |
+|-----------|---------|-------|------|
+| `exp8_scaling_d` | 50--5000 | 100 | ~15 min |
+| `exp6_workshop_main` | 50--200 | 100 | ~10 min |
+| `exp7_ablation_trust` | 100 | 100 | ~3 min |
+
+---
+
 ## Dependencies
 
 Core (installed via `pip install -e .`):
 - Python >= 3.10
 - numpy, scipy, pandas, matplotlib, seaborn
+- torch >= 2.0 (for GPU-batched execution)
 - openai, anthropic, tiktoken (for real LLM oracles)
 - networkx (for influence maximization graph structure)
 - pyyaml, tqdm, click, aiosqlite
 
-No PyTorch or GPU dependencies. All experiments run on CPU.
+CPU experiments (`run` command) work without CUDA. GPU experiments (`run-gpu` command) use CUDA if available, fall back to MPS (Apple Silicon) or CPU.
 
 ---
 

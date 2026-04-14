@@ -207,7 +207,8 @@ All experiments report mean $\pm$ standard error over 30 seeds.
 \subsection{Synthetic Semi-Bandits}
 
 \paragraph{Setup.}
-Bernoulli arms with $d \in \{50, 100, 200\}$, $m = 10$, horizon $T = 50{,}000$.
+Bernoulli arms with $d \in \{50, 100, 200, 500, 1000, 2000, 5000\}$, $m = 10$, horizon $T = 10^5$.
+GPU-batched execution runs 100 seeds per configuration simultaneously.
 Simulated CLO with 4 corruption models (Section~\ref{sec:model}) at varying $\varepsilon$.
 
 % =========================================================================
