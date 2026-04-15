@@ -4,8 +4,6 @@ __pycache__/
 dist/
 build/
 .eggs/
-results/
-figures/
 logs/
 cache/
 data/

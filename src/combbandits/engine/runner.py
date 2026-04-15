@@ -45,7 +45,8 @@ def _make_oracle(env, oracle_cfg: dict, seed: int):
         )
     elif oracle_type == "llm":
         from ..oracle.llm_oracle import LLMOracle
-        return LLMOracle(
+        from ..oracle.cached_oracle import CachedOracle
+        inner = LLMOracle(
             d=env.d,
             m=env.m,
             K=oracle_cfg.get("K", 3),
@@ -53,6 +54,14 @@ def _make_oracle(env, oracle_cfg: dict, seed: int):
             requery_model=oracle_cfg.get("requery_model", "gpt-4o-mini"),
             provider=oracle_cfg.get("provider", "openai"),
             temperature=oracle_cfg.get("temperature", 0.7),
+        )
+        # Wrap in CachedOracle for O(√T) query schedule + disk cache
+        schedule = oracle_cfg.get("schedule", "sqrt")
+        return CachedOracle(
+            inner_oracle=inner,
+            cache_dir=oracle_cfg.get("cache_dir", "cache/oracle"),
+            schedule=schedule,
+            enable_disk_cache=True,
         )
     raise ValueError(f"Unknown oracle type: {oracle_type}")
 

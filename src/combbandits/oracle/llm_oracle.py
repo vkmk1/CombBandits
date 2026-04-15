@@ -21,31 +21,83 @@ def _build_prompt(
     context: dict,
     prompt_variant: int = 0,
 ) -> str:
-    """Build the CLO prompt from arm metadata and context."""
-    # Rank arms by empirical mean for context
-    ranked = sorted(range(len(mu_hat)), key=lambda i: mu_hat[i], reverse=True)
+    """Build the CLO prompt from arm metadata and context.
 
-    # Format arm descriptions
+    The prompt gives the LLM enough structure to reason about which arms
+    to select, without revealing the true reward means. The LLM must use
+    its world knowledge (from arm metadata) plus empirical estimates to
+    make a combinatorial selection.
+    """
+    d = len(arm_metadata)
+    round_num = context.get("round", 0)
+
+    # Rank arms by empirical mean for context window
+    ranked = sorted(range(d), key=lambda i: mu_hat[i], reverse=True)
+
+    # Include top-ranked arms (most promising) plus some exploration candidates
+    n_top = min(40, d)
+    n_random = min(10, d - n_top) if d > n_top else 0
+    included_top = ranked[:n_top]
+    included_random = list(np.random.choice(
+        [i for i in range(d) if i not in included_top],
+        size=n_random, replace=False
+    )) if n_random > 0 else []
+    included = included_top + included_random
+
+    # Format arm descriptions with rich metadata
     arm_lines = []
-    for i in ranked[:50]:  # Limit context window; top-50 by current estimate
+    for i in included:
         meta = arm_metadata[i] if i < len(arm_metadata) else {}
         desc_parts = [f"ID={i}"]
         for k, v in meta.items():
             if k != "arm_id":
                 desc_parts.append(f"{k}={v}")
-        desc_parts.append(f"est_reward={mu_hat[i]:.3f}")
+        # Show empirical estimate if we have observations
+        pulls = context.get("n_pulls", {}).get(i, 0) if isinstance(context.get("n_pulls"), dict) else 0
+        if mu_hat[i] > 0 or pulls > 0:
+            desc_parts.append(f"avg_reward={mu_hat[i]:.3f}")
         arm_lines.append(", ".join(desc_parts))
 
     arm_block = "\n".join(arm_lines)
 
     task_desc = context.get("task_description", "Select the best items to maximize total reward.")
     history_summary = context.get("history_summary", "")
+    total_items = d
+    showing = len(included)
 
-    # Paraphrase variants for re-query independence
+    # Paraphrase variants for re-query independence (Assumption 2 in the paper)
     variants = [
-        f"You are an expert advisor. {task_desc}\n\nCandidate items (ranked by current estimate):\n{arm_block}\n\n{history_summary}\n\nSelect exactly {m} item IDs that will maximize total reward. Return ONLY a JSON list of {m} integer IDs.",
-        f"As a domain expert, help select the optimal subset. {task_desc}\n\nAvailable options:\n{arm_block}\n\n{history_summary}\n\nChoose the best {m} items. Output a JSON array of {m} IDs only.",
-        f"Task: {task_desc}\n\nItems available:\n{arm_block}\n\n{history_summary}\n\nPick {m} items to maximize expected reward. Respond with a JSON list of {m} integer IDs.",
+        (
+            f"You are an expert advisor for a sequential decision-making task.\n\n"
+            f"TASK: {task_desc}\n\n"
+            f"Round {round_num}. You must select exactly {m} items from {total_items} candidates.\n"
+            f"Below are {showing} candidates (top-ranked by current performance estimates, "
+            f"plus some less-explored options):\n\n{arm_block}\n\n"
+            f"{history_summary}\n\n"
+            f"Based on the item attributes AND the performance estimates, select the {m} items "
+            f"most likely to yield high rewards. Consider both the metadata (what the item IS) "
+            f"and the empirical data (how it has performed).\n\n"
+            f"Return ONLY a JSON list of exactly {m} integer IDs. Example: [3, 7, 12, 1, 9]"
+        ),
+        (
+            f"As a domain expert, help optimize a combinatorial selection problem.\n\n"
+            f"{task_desc}\n\n"
+            f"This is round {round_num}. Select {m} of the following {showing} options "
+            f"(from {total_items} total) to maximize cumulative reward:\n\n{arm_block}\n\n"
+            f"{history_summary}\n\n"
+            f"Use your expertise about the item properties to identify the best subset. "
+            f"Items with high estimated rewards are good candidates, but also consider "
+            f"items whose attributes suggest they should perform well.\n\n"
+            f"Output a JSON array of exactly {m} integer IDs."
+        ),
+        (
+            f"Sequential optimization task, round {round_num}.\n\n"
+            f"{task_desc}\n\n"
+            f"Pick {m} items from these {showing} candidates:\n\n{arm_block}\n\n"
+            f"{history_summary}\n\n"
+            f"Maximize expected total reward. Consider item attributes and past performance.\n"
+            f"Respond with a JSON list of {m} integer IDs."
+        ),
     ]
 
     return variants[prompt_variant % len(variants)]

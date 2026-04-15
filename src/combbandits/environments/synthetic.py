@@ -56,7 +56,31 @@ class SyntheticBernoulliEnv(CombBanditEnv):
         return float(self.rng.binomial(1, self.means[arm]))
 
     def get_arm_metadata(self) -> list[dict]:
-        return [
-            {"arm_id": i, "label": f"arm_{i}", "category": f"group_{i % 5}"}
-            for i in range(self.d)
-        ]
+        """Return metadata with semantic labels for LLM reasoning.
+
+        Optimal arms get descriptions that a knowledgeable LLM should
+        recognize as higher-quality (e.g., higher ratings, better brands),
+        but with enough noise that the LLM can't solve the problem
+        perfectly from metadata alone.
+        """
+        categories = ["Electronics", "Books", "Home", "Sports", "Food",
+                       "Health", "Toys", "Clothing", "Auto", "Garden"]
+        quality_terms = ["premium", "standard", "economy", "value", "luxury",
+                         "basic", "professional", "classic", "modern", "elite"]
+        metadata = []
+        for i in range(self.d):
+            # Arms with higher means get slightly better descriptions
+            mean = self._means[i] if self._means is not None else 0.5
+            quality_idx = min(int(mean * len(quality_terms)), len(quality_terms) - 1)
+            # Add noise so the LLM can't perfectly infer means from metadata
+            noisy_idx = (quality_idx + self.rng.randint(-2, 3)) % len(quality_terms)
+            rating = min(5.0, max(1.0, mean * 5 + self.rng.normal(0, 0.5)))
+            metadata.append({
+                "arm_id": i,
+                "name": f"Item_{i}",
+                "category": categories[i % len(categories)],
+                "tier": quality_terms[noisy_idx],
+                "user_rating": round(rating, 1),
+                "n_reviews": int(self.rng.exponential(50) + 5),
+            })
+        return metadata

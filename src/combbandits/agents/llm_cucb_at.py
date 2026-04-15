@@ -57,10 +57,20 @@ class LLMCUCBATAgent(Agent):
     def _build_context(self) -> dict:
         if self.context_builder is not None:
             return self.context_builder(self)
+        top_5 = list(np.argsort(self.mu_hat)[-5:])
+        top_5_means = [f"arm {a}: {self.mu_hat[a]:.3f}" for a in top_5]
         return {
             "round": self.t,
-            "task_description": "Select the best items to maximize total reward.",
-            "history_summary": f"Round {self.t}. Top arms so far: {list(np.argsort(self.mu_hat)[-5:])}",
+            "task_description": (
+                "You are helping optimize a sequential item selection task. "
+                "Each round, you select a subset of items and observe their rewards. "
+                "Your goal is to find the highest-reward subset as quickly as possible."
+            ),
+            "history_summary": (
+                f"Round {self.t}/{self.d * 5}. "
+                f"Best items so far (by observed avg reward): {', '.join(top_5_means)}. "
+                f"Total arms explored: {int((self.n_pulls > 0).sum())}/{self.d}."
+            ),
         }
 
     def _compute_posterior_validation(self, suggested_set: list[int]) -> float:

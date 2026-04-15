@@ -1,0 +1,63 @@
+# Experiment 9: Real LLM oracle experiments
+#
+# This is the CRITICAL experiment: actual GPT-4o / GPT-4o-mini API calls,
+# not simulated oracles. Validates that:
+#   1. LLMs produce useful combinatorial suggestions on real tasks
+#   2. The composite trust score adapts correctly to real LLM behavior
+#   3. LLM-CUCB-AT outperforms baselines with a real (not simulated) oracle
+#
+# Uses CachedOracle with O(√T) query schedule to control API costs.
+#
+# API Cost Estimate:
+#   Per trial: √2000 ≈ 45 query rounds × K=3 = 135 API calls
+#   Per call: ~$0.003 (GPT-4o-mini) + ~$0.01 (GPT-4o primary)
+#   Per trial: ~$0.50
+#   Total: 6 agents × 2 envs × 10 seeds × $0.50 = ~$60
+#
+# Prerequisites:
+#   export OPENAI_API_KEY=sk-...
+#
+# Run with:
+#   python -m combbandits.cli run configs/experiments/exp9_real_llm.yaml \
+#       --output-dir results/exp9_real_llm --workers 4
+#
+# Estimated time: ~30 minutes (API latency bound, not compute bound)
+name: exp9_real_llm
+
+T: 2000
+n_seeds: 10
+log_interval: 500
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+
+environments:
+  # Product recommendation (d=50 items, select m=5)
+  - type: synthetic_bernoulli
+    d: 50
+    m: 5
+    gap_type: uniform
+    delta_min: 0.08
+
+  # Larger set (d=100 items, select m=10)
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+oracles:
+  # Real GPT-4o with O(√T) caching
+  - type: llm
+    primary_model: gpt-4o
+    requery_model: gpt-4o-mini
+    provider: openai
+    K: 3
+    temperature: 0.7
+    schedule: sqrt
+    cache_dir: cache/oracle_exp9
