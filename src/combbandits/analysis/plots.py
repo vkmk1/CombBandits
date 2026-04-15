@@ -86,11 +86,18 @@ def plot_regret_curves(
     agents: list[str] | None = None,
 ):
     """Plot cumulative regret curves with 95% CI shading."""
-    results = load_results(results_path)
+    all_results = load_results(results_path)
+    non_oracle_agents = {"cucb", "cts", "corrupt_robust_cucb"}
+    baseline_results = [r for r in all_results if r["agent"] in non_oracle_agents]
+
+    results = all_results
     if filter_corruption:
-        results = [r for r in results if r["corruption_type"] == filter_corruption]
+        results = [r for r in all_results if r["corruption_type"] == filter_corruption]
+        # Always include baselines
+        results = results + [r for r in baseline_results if r not in results]
     if filter_epsilon is not None:
-        results = [r for r in results if abs(r["epsilon"] - filter_epsilon) < 1e-6]
+        # Only filter oracle agents by epsilon; keep all baselines
+        results = [r for r in results if abs(r["epsilon"] - filter_epsilon) < 1e-6 or r["agent"] in non_oracle_agents]
 
     curves = regret_curves_by_agent(results)
 
@@ -146,10 +153,16 @@ def plot_regret_curves_multipanel(
     nrows = (n_panels + ncols - 1) // ncols
     fig, axes = plt.subplots(nrows, ncols, figsize=(5 * ncols, 3.5 * nrows), squeeze=False)
 
+    # Identify non-oracle agents (they have corruption_type "none" and should appear in all panels)
+    non_oracle_agents = {"cucb", "cts", "corrupt_robust_cucb"}
+    baseline_results = [r for r in results if r["agent"] in non_oracle_agents]
+
     for idx, (ct, eps) in enumerate(panels):
         row, col = divmod(idx, ncols)
         ax = axes[row][col]
         sub = [r for r in results if r["corruption_type"] == ct and abs(r["epsilon"] - eps) < 1e-6]
+        # Always include baseline agents so they appear in every panel
+        sub = sub + [r for r in baseline_results if r not in sub]
         curves = regret_curves_by_agent(sub)
 
         for key in sorted(curves.keys()):

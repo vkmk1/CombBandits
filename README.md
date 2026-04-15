@@ -437,7 +437,7 @@ For real MIND/SNAP data, see [External Data](#external-data-optional) below.
 
 ## Current Results (Simulated Oracle Experiments)
 
-These experiments use a simulated oracle (parameterized coin flip, not a real LLM) to validate the algorithm's theoretical properties under controlled conditions. Real LLM experiments (exp9) are pending.
+> **Important:** All completed experiments use **simulated environments** and **simulated oracles** (parameterized coin flips, not real LLMs). No real datasets (MIND, SNAP) and no LLM API calls have been made. These validate algorithm safety and theory. See [EXPERIMENTS.md](EXPERIMENTS.md) for detailed descriptions of what each experiment does and does not do. Real LLM experiments (exp9) are pending.
 
 ### exp7: Trust Ablation (d=100, m=10, T=30K, 30 seeds)
 
@@ -457,7 +457,9 @@ The headline experiment showing how different agents handle oracle corruption ty
 - **Warm-Start CTS dominates** with the simulated oracle because the simulated oracle knows the optimal set — querying it once and using it as a Bayesian prior is the best strategy *when the oracle is a coin flip*. This advantage will not hold with a real LLM.
 - **CUCB is the baseline to beat** — LLM-CUCB-AT needs real LLM world knowledge (exp9) to show improvement over pure UCB exploration
 
-### exp4: MIND News Recommendation (d=200, m=5, T=2K, 20 seeds)
+### exp4: Simulated News Recommendation (d=200, m=5, T=2K, 20 seeds)
+
+Uses `MINDEnvSimulated` — synthetic click probabilities, **not** the real Microsoft MIND dataset.
 
 | Agent | Partial Overlap (eps=0.15) | Uniform (eps=0.1) | Uniform (eps=0.3) |
 |-------|---------------------------|-------------------|-------------------|
@@ -467,7 +469,9 @@ The headline experiment showing how different agents handle oracle corruption ty
 | LLM-Greedy | 2,296 | 2,301 | 2,288 |
 | Warm-Start CTS | **1,144** | **1,125** | **1,114** |
 
-### exp5: Influence Maximization (d=200, m=10, T=5K, 20 seeds)
+### exp5: Simulated Influence Maximization (d=200, m=10, T=5K, 20 seeds)
+
+Uses `InfluenceMaxEnvSimulated` — synthetic graph with planted communities, **not** real SNAP social networks. No independent cascade Monte Carlo.
 
 | Agent | Partial Overlap (eps=0.2) | Uniform (eps=0.1) | Uniform (eps=0.3) |
 |-------|---------------------------|-------------------|-------------------|
