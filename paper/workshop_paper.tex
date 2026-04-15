@@ -22,6 +22,7 @@
 \usepackage{nicefrac}
 \usepackage{microtype}
 \usepackage{graphicx}
+\graphicspath{{figures/}{../figures/}}
 \usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage{algorithmic}
@@ -297,9 +298,23 @@ Simulated MIND-like environment: $d=200$ candidate articles with category struct
 Under partial overlap corruption ($\varepsilon = 0.15$), LLM-CUCB-AT achieves regret of $1{,}931 \pm 82$, comparable to CUCB ($1{,}920 \pm 80$) and 16\% lower than LLM-Greedy ($2{,}296 \pm 142$).
 Thompson Sampling methods (CTS: $1{,}207$; Warm-Start CTS: $1{,}144$) outperform UCB-based methods on this structured task.
 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/regret_multipanel_mind.pdf}
+    \caption{Cumulative regret on simulated news recommendation ($d=200$, $m=5$, $T=2{,}000$). LLM-CUCB-AT (red) is comparable to CUCB (blue) and consistently outperforms LLM-Greedy (purple) and ELLM-Adapted (teal). Thompson Sampling methods (CTS, Warm-Start CTS) benefit most from the structured category-user preference reward model.}
+    \label{fig:mind}
+\end{figure}
+
 \paragraph{Influence maximization.}
 Simulated social network with planted community structure: $d=200$ candidate seed nodes, $m=10$, $T=5{,}000$, 20 seeds.
 Under partial overlap corruption ($\varepsilon = 0.2$), LLM-CUCB-AT ($5{,}203 \pm 97$) matches CUCB ($5{,}142 \pm 91$) and achieves 37\% lower regret than LLM-Greedy ($8{,}256 \pm 319$).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/regret_multipanel_infmax.pdf}
+    \caption{Cumulative regret on simulated influence maximization ($d=200$, $m=10$, $T=5{,}000$). The structured reward with clear community clusters favors Thompson Sampling. LLM-CUCB-AT (red) matches CUCB (blue) and achieves 37\% lower regret than oracle-following methods (LLM-Greedy, ELLM-Adapted) which suffer from blindly following the simulated oracle's corrupt suggestions.}
+    \label{fig:infmax}
+\end{figure}
 
 In both domains, LLM-CUCB-AT provides a safe middle ground: it never performs catastrophically (unlike LLM-Greedy and ELLM-Adapted, which incur 60--100\% higher regret) while maintaining comparable performance to CUCB.
 
