@@ -33,26 +33,23 @@ cd "$REPO"
 log "GPU status:"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader | tee -a "$LOG"
 
-# ── Mount NVMe local SSD for scratch (model weights, HF cache) ────────────
-SCRATCH="/scratch"
-NVME_DEV=$(lsblk -dpno NAME,TYPE | awk '$2=="disk"{print $1}' | grep -v "$(lsblk -dpno NAME,MOUNTPOINT | awk '$2=="/"{print $1}')" | head -1 || true)
-if [[ -n "$NVME_DEV" && -b "$NVME_DEV" ]]; then
-  log "Formatting NVMe local SSD: $NVME_DEV -> $SCRATCH"
-  sudo mkfs.xfs -f "$NVME_DEV"
-  sudo mkdir -p "$SCRATCH"
-  sudo mount "$NVME_DEV" "$SCRATCH"
+# ── Use NVMe local SSD for scratch (model weights, HF cache) ─────────────
+# DLAMI pre-mounts the NVMe instance store at /opt/dlami/nvme
+if mountpoint -q /opt/dlami/nvme 2>/dev/null; then
+  SCRATCH="/opt/dlami/nvme"
   sudo chmod 777 "$SCRATCH"
-  export HF_HOME="$SCRATCH/hf_cache"
-  export TRANSFORMERS_CACHE="$SCRATCH/hf_cache"
-  mkdir -p "$HF_HOME"
-  log "NVMe mounted: $(df -h "$SCRATCH" | tail -1)"
+  log "NVMe SSD: $(df -h "$SCRATCH" | tail -1)"
 else
-  log "No NVMe local SSD found, using EBS root."
   SCRATCH="$HOME"
+  log "No NVMe mount found, using EBS root."
 fi
+export HF_HOME="$SCRATCH/hf_cache"
+export TRANSFORMERS_CACHE="$SCRATCH/hf_cache"
+mkdir -p "$HF_HOME"
 
 # ── Install into venv ──────────────────────────────────────────────────────
 log "Installing dependencies..."
+sudo apt-get update -qq && sudo apt-get install -y -qq python3-venv > /dev/null 2>&1
 python3 -m venv "$VENV"
 "$VENV/bin/pip" install -q --upgrade pip
 "$VENV/bin/pip" install -q -e ".[dev]"
@@ -63,14 +60,18 @@ log "Install complete."
 
 PYTHON="$VENV/bin/python"
 
-# ── Fetch secrets from SSM ─────────────────────────────────────────────────
-log "Fetching secrets from SSM..."
+# ── Fetch secrets (SSM → local file fallback) ─────────────────────────────
+log "Fetching secrets..."
 HF_TOKEN=$(aws ssm get-parameter \
   --name "/combbandits/hf_token" --with-decryption \
-  --query "Parameter.Value" --output text 2>/dev/null) || { log "WARNING: no HF_TOKEN in SSM"; HF_TOKEN=""; }
+  --query "Parameter.Value" --output text 2>/dev/null) || HF_TOKEN=""
+[[ -z "$HF_TOKEN" && -f "$HOME/hf_token.txt" ]] && HF_TOKEN=$(cat "$HOME/hf_token.txt")
+[[ -z "$HF_TOKEN" ]] && log "WARNING: no HF_TOKEN found"
 GH_TOKEN=$(aws ssm get-parameter \
   --name "/combbandits/github_token" --with-decryption \
-  --query "Parameter.Value" --output text 2>/dev/null) || { log "WARNING: no GitHub token in SSM"; GH_TOKEN=""; }
+  --query "Parameter.Value" --output text 2>/dev/null) || GH_TOKEN=""
+[[ -z "$GH_TOKEN" && -f "$HOME/gh_token.txt" ]] && GH_TOKEN=$(cat "$HOME/gh_token.txt")
+[[ -z "$GH_TOKEN" ]] && log "WARNING: no GitHub token found"
 
 export HF_TOKEN
 
@@ -166,61 +167,85 @@ PYEOF
   log "✓  $EXP done in ${ELAPSED}s"
 }
 
-# ── PHASE 1: CPU experiments in parallel ──────────────────────────────────
-# g4dn.2xlarge: 8 vCPUs, 32 GB RAM. exp6 is the heaviest (14K tasks).
-# exp9_bedrock is API-latency bound — 4 workers is plenty.
-# Worker split: exp6=4, exp7=2, exp4=1, exp5=1, exp9_bedrock=4
-log "=== PHASE 1: CPU experiments (parallel) ==="
+# ── PHASE 1: exp9_bedrock on CPU (API-latency bound, runs during GPU phase) ─
+# exp9_bedrock uses real Bedrock API calls — must run on CPU with network I/O.
+# All other simulated experiments run on GPU (Phase 2).
+log "=== PHASE 1: exp9_bedrock (CPU, background) ==="
+run_exp exp9_bedrock 4 &  PID9B=$!
 
-run_exp exp4_mind            1 &  PID4=$!
-run_exp exp5_influence_max   1 &  PID5=$!
-run_exp exp7_ablation_trust  2 &  PID7=$!
-run_exp exp6_workshop_main   4 &  PID6=$!
-run_exp exp9_bedrock         4 &  PID9B=$!
+# ── PHASE 2: GPU batched experiments (exp4, exp5, exp6, exp7, exp8) ───────
+# All simulated environments (synthetic_bernoulli, mind_simulated,
+# influence_max_simulated) and all agents have GPU-batched implementations.
+# Each experiment's n_seeds run simultaneously on GPU tensors.
+log "=== PHASE 2: GPU batched experiments ==="
 
-log "Waiting for CPU experiments..."
-for PAIR in "$PID4:exp4" "$PID5:exp5" "$PID7:exp7" "$PID6:exp6" "$PID9B:exp9_bedrock"; do
-  PID="${PAIR%%:*}"; NAME="${PAIR##*:}"
-  if wait "$PID"; then log "  $NAME: OK"
-  else log "  $NAME: FAILED"; FAILED=$(( FAILED + 1 )); fi
-done
-log "CPU phase complete."
+GPU_EXPS="exp4_mind exp5_influence_max exp6_workshop_main exp7_ablation_trust exp8_scaling_d"
 
-# ── PHASE 2: exp8 — GPU batched simulation ────────────────────────────────
-log "=== PHASE 2: exp8_scaling_d (GPU batched) ==="
-START=$(date +%s)
-mkdir -p results/exp8_scaling_d
+for EXP in $GPU_EXPS; do
+  START=$(date +%s)
+  EXPLOG="$HOME/log_${EXP}.log"
+  log "▶  $EXP (GPU batched)"
+  mkdir -p "results/$EXP"
 
-"$PYTHON" - << 'PYEOF' 2>&1 | tee -a "$LOG"
-import sys, yaml, json, torch
+  "$PYTHON" - "$EXP" << 'PYEOF' > "$EXPLOG" 2>&1
+import sys, yaml, json, torch, logging
 from pathlib import Path
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S')
 sys.path.insert(0, 'src')
 from combbandits.gpu.batched_trial import run_batched_experiment
 
-with open('configs/experiments/exp8_scaling_d.yaml') as f:
+exp = sys.argv[1]
+cfg_path = f'configs/experiments/{exp}.yaml'
+with open(cfg_path) as f:
     cfg = yaml.safe_load(f)
 
 device = torch.device('cuda')
-print(f'Running exp8 on {device} ({torch.cuda.get_device_name(0)})...')
+print(f'Running {exp} on {device} ({torch.cuda.get_device_name(0)})...')
 results = run_batched_experiment(cfg, device=device)
-print(f'exp8 done: {len(results)} trials')
+print(f'{exp} done: {len(results)} trials')
 
-Path('results/exp8_scaling_d').mkdir(parents=True, exist_ok=True)
-with open('results/exp8_scaling_d/exp8_scaling_d_results.json', 'w') as f:
+out_dir = Path(f'results/{exp}')
+out_dir.mkdir(parents=True, exist_ok=True)
+with open(out_dir / f'{exp}_results.json', 'w') as f:
     json.dump(results, f, indent=2)
-print('Saved results/exp8_scaling_d/exp8_scaling_d_results.json')
+print(f'Saved results/{exp}/{exp}_results.json')
 PYEOF
 
-if [[ $? -eq 0 ]]; then
-  ELAPSED=$(( $(date +%s) - START ))
-  log "✓  exp8_scaling_d done in ${ELAPSED}s"
-  # Figures
-  "$PYTHON" -m combbandits.cli plot \
-    results/exp8_scaling_d/exp8_scaling_d_results.json \
-    --output-dir figures/exp8_scaling_d 2>&1 | tee -a "$LOG" || true
-else
-  log "  exp8_scaling_d: FAILED"; FAILED=$(( FAILED + 1 ))
-fi
+  if [[ $? -eq 0 ]]; then
+    ELAPSED=$(( $(date +%s) - START ))
+    log "✓  $EXP (GPU) done in ${ELAPSED}s"
+    "$PYTHON" -m combbandits.cli plot \
+      "results/$EXP/${EXP}_results.json" \
+      --output-dir "figures/$EXP" >> "$EXPLOG" 2>&1 || true
+
+    # Per-experiment summary
+    "$PYTHON" - << PYEOF >> "$EXPLOG" 2>&1 || true
+import json
+with open('results/${EXP}/${EXP}_results.json') as f:
+    r = json.load(f)
+agents = list({x['agent'] for x in r})
+summary = {
+    'exp': '${EXP}',
+    'n_trials': len(r),
+    'wall_time_sec': ${ELAPSED},
+    'mean_final_regret': {a: round(sum(x['final_regret'] for x in r if x['agent']==a)
+                                   /max(1,len([x for x in r if x['agent']==a])),1) for a in agents}
+}
+with open('metadata/${EXP}_summary.json', 'w') as f:
+    json.dump(summary, f, indent=2)
+print(json.dumps(summary, indent=2))
+PYEOF
+  else
+    log "  $EXP: FAILED"; FAILED=$(( FAILED + 1 ))
+  fi
+done
+
+log "GPU phase complete."
+
+# Wait for exp9_bedrock to finish (may already be done)
+log "Waiting for exp9_bedrock..."
+if wait "$PID9B"; then log "  exp9_bedrock: OK"
+else log "  exp9_bedrock: FAILED"; FAILED=$(( FAILED + 1 )); fi
 
 # ── PHASE 3: exp9_local — Llama 4 Scout + weight tracking ─────────────────
 log "=== PHASE 3: exp9_local (Llama 4 Scout, weight tracking) ==="

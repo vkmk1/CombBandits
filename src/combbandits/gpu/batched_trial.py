@@ -13,7 +13,7 @@ import math
 import torch
 import numpy as np
 
-from .batched_env import BatchedSyntheticBernoulliEnv
+from .batched_env import build_batched_env
 from .batched_oracle import BatchedSimulatedCLO
 from .batched_agents import (
     BATCHED_AGENT_REGISTRY, NEEDS_ORACLE, BatchedLLMCUCBAT,
@@ -42,15 +42,7 @@ def run_batched_trial(
     agent_config = agent_config or {}
 
     # --- Build environment ---
-    env = BatchedSyntheticBernoulliEnv(
-        d=env_cfg.get("d", 100),
-        m=env_cfg.get("m", 10),
-        n_seeds=n_seeds,
-        gap_type=env_cfg.get("gap_type", "uniform"),
-        delta_min=env_cfg.get("delta_min", 0.05),
-        base_seed=env_cfg.get("seed", 0),
-        device=device,
-    )
+    env = build_batched_env(env_cfg, n_seeds=n_seeds, device=device)
     env.reset()
     d, m = env.d, env.m
 
