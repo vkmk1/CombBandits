@@ -1,0 +1,68 @@
+# Experiment 9 (Local): Real LLM oracle with full weight/activation tracking.
+#
+# Runs Llama 4 Scout 17B directly on GPU (no API). Captures per-call:
+#   - token log-probabilities for each suggested arm   (model confidence)
+#   - attention weights over arm metadata              (what the model reads)
+#   - final hidden-state vectors (128-d PCA projection)(representation drift)
+#   - output entropy                                   (uncertainty per query)
+#   - KL divergence across K re-queries                (internal consistency)
+#
+# All internals written to metadata/oracle_weights.db (SQLite).
+#
+# Scientific value: fully reproducible — anyone can load the same weights from
+# HuggingFace (meta-llama/Llama-4-Scout-17B-16E-Instruct) and reproduce every
+# oracle call. Weight snapshots let us validate that kappa (consistency score)
+# tracks the model's internal diversity, not just its output set overlap.
+#
+# Run on Colab A100:
+#   python -m combbandits.cli run configs/experiments/exp9_local.yaml \
+#       --output-dir results/exp9_local --workers 1
+#
+# Note: workers=1 because the model is loaded once and shared across trials
+# (ProcessPoolExecutor would reload the model per worker). The GPU handles
+# the parallelism internally.
+name: exp9_local
+
+T: 2000
+n_seeds: 10
+log_interval: 500
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+
+environments:
+  - type: synthetic_bernoulli
+    d: 50
+    m: 5
+    gap_type: uniform
+    delta_min: 0.08
+
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+  - type: synthetic_bernoulli
+    d: 50
+    m: 5
+    gap_type: clustered
+    delta_min: 0.05
+
+oracles:
+  - type: local_llm
+    model_name: meta-llama/Llama-4-Scout-17B-16E-Instruct
+    device: cuda
+    K: 3
+    temperature: 0.7
+    max_new_tokens: 64
+    load_in_4bit: true          # fits in 24GB VRAM with 4-bit quant
+    schedule: sqrt              # O(√T) ≈ 45 actual LLM calls per trial
+    cache_dir: cache/oracle_exp9_local
+    weights_db: metadata/oracle_weights.db
+    # hf_token: set via HF_TOKEN env var on Colab

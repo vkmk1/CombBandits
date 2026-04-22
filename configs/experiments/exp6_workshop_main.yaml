@@ -2,11 +2,24 @@
 # Focused config that produces all figures needed for an 8-page workshop paper.
 # Each oracle config maps to a specific theoretical prediction to validate.
 #
-# Estimated runtime: ~3 hours on DELLA with 50 parallel CPU tasks.
+# Design:
+#   Three gap structures × three dimension values × ten oracle configs × 30 seeds
+#   = 6,300 tasks. With 32 parallel workers on c7i.8xlarge (~0.3s/task average),
+#   wall time is approximately 65 minutes.
+#
+#   Gap structures chosen to test distinct theoretical claims:
+#     uniform:   Standard case, validates regret vs epsilon and regret vs d
+#     clustered: Large gaps (Δ≈0.4), tests that theory holds when exploration is easy
+#     graded:    Varying gaps (Δ = 0.01 to 0.4), tests that the O(1/Δ_min) term
+#                in the lower bound (Theorem 3) dominates for small-gap arms
+#
+#   The three dimensions (d=50, 100, 200) validate the dimension-reduction term
+#   in Theorem 1: regret ∝ sqrt(m*(m + sqrt(d))*T) for reliable oracle vs
+#   sqrt(m*d*T) for CUCB.
 name: exp6_workshop_main
 
-T: 100000  # Full NeurIPS-grade horizon (compute is cheap: ~10s per task)
-n_seeds: 30  # 30 seeds for proper statistical significance
+T: 100000  # Full NeurIPS-grade horizon
+n_seeds: 30
 log_interval: 10000
 
 agents:
@@ -19,7 +32,7 @@ agents:
   - corrupt_robust_cucb
 
 environments:
-  # Three dimension values to validate dimension-reduction prediction
+  # Uniform gap: standard theory validation (equal gap Δ=delta_min for all suboptimal arms)
   - type: synthetic_bernoulli
     d: 50
     m: 10
@@ -36,6 +49,44 @@ environments:
     gap_type: uniform
     delta_min: 0.05
 
+  # Clustered gap: large separation between optimal and suboptimal clusters (Δ≈0.4).
+  # Tests that the algorithm works when the problem has clear structure.
+  # Also the best case for a real LLM oracle (clusters map to metadata categories).
+  - type: synthetic_bernoulli
+    d: 50
+    m: 10
+    gap_type: clustered
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: clustered
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 200
+    m: 10
+    gap_type: clustered
+    delta_min: 0.05
+
+  # Graded gap: arms have linearly spaced means, so Δ_min is small.
+  # Validates the O(ε·m/Δ_min) lower bound term from Theorem 3 — corruption
+  # cost is highest when the gap is small and the oracle is wrong.
+  - type: synthetic_bernoulli
+    d: 50
+    m: 10
+    gap_type: graded
+    delta_min: 0.02
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: graded
+    delta_min: 0.02
+  - type: synthetic_bernoulli
+    d: 200
+    m: 10
+    gap_type: graded
+    delta_min: 0.02
+
 oracles:
   # --- Validates Corollary 1.1: Perfect oracle ---
   - type: simulated
@@ -43,7 +94,7 @@ oracles:
     epsilon: 0.0
     K: 3
 
-  # --- Validates Theorem 2: corruption cost scaling ---
+  # --- Validates Theorem 2: corruption cost scaling (epsilon sweep) ---
   - type: simulated
     corruption_type: uniform
     epsilon: 0.05
@@ -66,13 +117,13 @@ oracles:
     K: 3
 
   # --- Validates Corollary 1.4: consistently wrong oracle ---
-  # This is the HEADLINE RESULT: composite trust catches it
+  # HEADLINE RESULT: composite trust (kappa+rho) catches it; consistency-only misses it
   - type: simulated
     corruption_type: consistent_wrong
     epsilon: 1.0
     K: 3
 
-  # --- Validates adversarial robustness ---
+  # --- Validates adversarial robustness (Corollary 1.3) ---
   - type: simulated
     corruption_type: adversarial
     epsilon: 0.1
@@ -82,7 +133,7 @@ oracles:
     epsilon: 0.3
     K: 3
 
-  # --- Validates graded quality model ---
+  # --- Validates graded quality model (Definition 2) ---
   - type: simulated
     corruption_type: partial_overlap
     epsilon: 0.2

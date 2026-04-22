@@ -1,7 +1,6 @@
-"""Real LLM-backed CLO using OpenAI/Anthropic APIs."""
+"""Real LLM-backed CLO using OpenAI/Anthropic/AWS Bedrock APIs."""
 from __future__ import annotations
 
-import asyncio
 import json
 import re
 import logging
@@ -132,10 +131,13 @@ def _parse_response(text: str, d: int, m: int) -> list[int]:
 
 
 class LLMOracle(CLOBase):
-    """Real LLM oracle using OpenAI or Anthropic API.
+    """Real LLM oracle using OpenAI, Anthropic, or AWS Bedrock APIs.
 
-    Primary query uses the main model (e.g., GPT-4o).
-    Re-queries can use a cheaper model (e.g., GPT-4o-mini or Llama-3-8B via vLLM).
+    Primary query uses the main model. Re-queries use a cheaper model
+    with paraphrased prompts (for consistency estimation independence).
+
+    For provider="bedrock", credentials come from the EC2 instance role
+    (no API key needed). Uses boto3 bedrock-runtime.
     """
 
     def __init__(
@@ -143,13 +145,14 @@ class LLMOracle(CLOBase):
         d: int,
         m: int,
         K: int = 3,
-        primary_model: str = "gpt-4o",
-        requery_model: Optional[str] = "gpt-4o-mini",
-        provider: str = "openai",
+        primary_model: str = "anthropic.claude-3-5-haiku-20241022-v1:0",
+        requery_model: Optional[str] = None,
+        provider: str = "bedrock",
         temperature: float = 0.7,
         max_tokens: int = 256,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
+        region: str = "us-east-1",
     ):
         super().__init__(d=d, m=m, K=K)
         self.primary_model = primary_model
@@ -160,6 +163,7 @@ class LLMOracle(CLOBase):
         self._client = None
         self._api_key = api_key
         self._base_url = base_url
+        self._region = region
 
     def _get_client(self):
         if self._client is not None:
@@ -179,6 +183,9 @@ class LLMOracle(CLOBase):
             if self._api_key:
                 kwargs["api_key"] = self._api_key
             self._client = anthropic.Anthropic(**kwargs)
+        elif self.provider == "bedrock":
+            import boto3
+            self._client = boto3.client("bedrock-runtime", region_name=self._region)
         else:
             raise ValueError(f"Unknown provider: {self.provider}")
         return self._client
@@ -207,6 +214,21 @@ class LLMOracle(CLOBase):
             )
             text = response.content[0].text if response.content else ""
             tokens = (response.usage.input_tokens + response.usage.output_tokens) if response.usage else 0
+            return text, tokens
+
+        elif self.provider == "bedrock":
+            # Bedrock Converse API — works for all Anthropic, Meta, Mistral models
+            response = client.converse(
+                modelId=model,
+                messages=[{"role": "user", "content": [{"text": prompt}]}],
+                inferenceConfig={
+                    "maxTokens": self.max_tokens,
+                    "temperature": self.temperature,
+                },
+            )
+            text = response["output"]["message"]["content"][0]["text"]
+            usage = response.get("usage", {})
+            tokens = usage.get("inputTokens", 0) + usage.get("outputTokens", 0)
             return text, tokens
 
         raise ValueError(f"Unknown provider: {self.provider}")

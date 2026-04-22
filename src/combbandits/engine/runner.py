@@ -50,16 +50,38 @@ def _make_oracle(env, oracle_cfg: dict, seed: int):
             d=env.d,
             m=env.m,
             K=oracle_cfg.get("K", 3),
-            primary_model=oracle_cfg.get("primary_model", "gpt-4o"),
-            requery_model=oracle_cfg.get("requery_model", "gpt-4o-mini"),
-            provider=oracle_cfg.get("provider", "openai"),
+            primary_model=oracle_cfg.get("primary_model", "anthropic.claude-3-5-haiku-20241022-v1:0"),
+            requery_model=oracle_cfg.get("requery_model"),
+            provider=oracle_cfg.get("provider", "bedrock"),
             temperature=oracle_cfg.get("temperature", 0.7),
+            region=oracle_cfg.get("region", "us-east-1"),
         )
-        # Wrap in CachedOracle for O(√T) query schedule + disk cache
         schedule = oracle_cfg.get("schedule", "sqrt")
         return CachedOracle(
             inner_oracle=inner,
             cache_dir=oracle_cfg.get("cache_dir", "cache/oracle"),
+            schedule=schedule,
+            enable_disk_cache=True,
+        )
+    elif oracle_type == "local_llm":
+        from ..oracle.local_llm_oracle import LocalLLMOracle
+        from ..oracle.cached_oracle import CachedOracle
+        inner = LocalLLMOracle(
+            d=env.d,
+            m=env.m,
+            K=oracle_cfg.get("K", 3),
+            model_name=oracle_cfg.get("model_name", "meta-llama/Llama-4-Scout-17B-16E-Instruct"),
+            device=oracle_cfg.get("device", "cuda"),
+            temperature=oracle_cfg.get("temperature", 0.7),
+            max_new_tokens=oracle_cfg.get("max_new_tokens", 64),
+            load_in_4bit=oracle_cfg.get("load_in_4bit", True),
+            weights_db=oracle_cfg.get("weights_db", "metadata/oracle_weights.db"),
+            hf_token=oracle_cfg.get("hf_token"),
+        )
+        schedule = oracle_cfg.get("schedule", "sqrt")
+        return CachedOracle(
+            inner_oracle=inner,
+            cache_dir=oracle_cfg.get("cache_dir", "cache/oracle_local"),
             schedule=schedule,
             enable_disk_cache=True,
         )
@@ -190,34 +212,67 @@ class ExperimentRunner:
 
         logger.info(f"Running {len(tasks)} trials with {max_workers or 'auto'} workers")
 
-        results = []
+        exp_name = self.config.get("name", "experiment")
+        out_path = self.output_dir / f"{exp_name}_results.json"
+        checkpoint_path = self.output_dir / f"{exp_name}_checkpoint.json"
+
+        # Resume from checkpoint if present (crash recovery)
+        completed_keys: set[str] = set()
+        results: list[dict] = []
+        if checkpoint_path.exists():
+            try:
+                with open(checkpoint_path) as f:
+                    results = json.load(f)
+                for r in results:
+                    completed_keys.add(f"{r['agent']}|{r['env']}|{r.get('corruption_type','')}|{r.get('epsilon',0)}|{r['seed']}")
+                logger.info(f"Resumed from checkpoint: {len(results)} completed trials")
+            except Exception:
+                results = []
+
+        pending = [
+            t for t in tasks
+            if f"{t['agent']}|{t['env']['type']}|{t['oracle'].get('corruption_type','')}|{t['oracle'].get('epsilon',0)}|{t['seed']}"
+            not in completed_keys
+        ]
+        logger.info(f"{len(pending)} tasks remaining ({len(tasks)-len(pending)} already done)")
+
+        def _save_checkpoint():
+            with open(checkpoint_path, "w") as f:
+                json.dump(results, f)
+
         if max_workers == 1:
-            # Single-process mode (for debugging)
-            for task in tasks:
-                result = _run_single(task)
-                results.append(result)
+            for task in pending:
+                try:
+                    result = _run_single(task)
+                    results.append(result)
+                    _save_checkpoint()
+                except Exception as e:
+                    logger.error(f"Task failed: {e}")
         else:
             with ProcessPoolExecutor(max_workers=max_workers) as pool:
-                futures = {pool.submit(_run_single, task): i for i, task in enumerate(tasks)}
+                futures = {pool.submit(_run_single, task): i for i, task in enumerate(pending)}
                 for future in as_completed(futures):
                     idx = futures[future]
                     try:
                         result = future.result()
                         results.append(result)
                         logger.info(
-                            f"[{idx+1}/{len(tasks)}] {result['agent']} | "
+                            f"[{len(results)}/{len(tasks)}] {result['agent']} | "
                             f"eps={result['epsilon']} | seed={result['seed']} | "
                             f"regret={result['final_regret']:.1f}"
                         )
+                        # Checkpoint every 10 completed tasks
+                        if len(results) % 10 == 0:
+                            _save_checkpoint()
                     except Exception as e:
                         logger.error(f"Task {idx} failed: {e}")
 
-        # Save results
-        exp_name = self.config.get("name", "experiment")
-        out_path = self.output_dir / f"{exp_name}_results.json"
+        # Final save
         with open(out_path, "w") as f:
             json.dump(results, f, indent=2)
-        logger.info(f"Results saved to {out_path}")
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()  # clean up checkpoint on successful finish
+        logger.info(f"Results saved to {out_path} ({len(results)} trials)")
 
         return results
 

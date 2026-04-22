@@ -1,0 +1,83 @@
+# Experiment 9 (Bedrock): Real LLM oracle experiments via AWS Bedrock
+#
+# Replaces exp9_real_llm.yaml (OpenAI) with AWS Bedrock models.
+# No API keys needed — uses EC2 instance role with AmazonBedrockFullAccess.
+#
+# Oracle design:
+#   Primary: Claude 3.5 Haiku (fast, cheap, strong reasoning)
+#   Re-query: Claude 3.5 Haiku (same model, different prompt variants)
+#   K=3 re-queries for consistency estimation
+#   O(√T) query schedule → ~45 actual calls per trial (T=2000)
+#
+# Cost: $0 API cost (Bedrock on-demand pricing billed to AWS account)
+#   Claude 3.5 Haiku: $0.0008/1K input tokens + $0.004/1K output
+#   Per trial: ~45 calls × ~300 tokens each = ~$0.05
+#   Total (120 trials): ~$6
+#
+# Run with:
+#   python -m combbandits.cli run configs/experiments/exp9_bedrock.yaml \
+#       --output-dir results/exp9_bedrock --workers 4
+#
+# Estimated time: ~45 minutes (Bedrock API latency ~1-2s/call)
+name: exp9_bedrock
+
+T: 2000
+n_seeds: 10
+log_interval: 500
+
+agents:
+  - cucb
+  - cts
+  - llm_cucb_at
+  - llm_greedy
+  - ellm_adapted
+  - warm_start_cts
+
+environments:
+  # Uniform gap: standard baseline (d=50, m=5)
+  # LLM arm metadata has some signal but is noisy — tests whether the LLM can
+  # extract useful priors despite the noise (the core exp9 claim).
+  - type: synthetic_bernoulli
+    d: 50
+    m: 5
+    gap_type: uniform
+    delta_min: 0.08
+
+  # Uniform gap: larger ground set (d=100, m=10)
+  # More arms → dimension reduction matters more → bigger theoretical advantage
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+  # Clustered gap: arms cluster into "good" and "bad" groups (Δ≈0.4 between clusters).
+  # The arm metadata encodes category/tier/rating which correlates with cluster membership.
+  # This is where LLM world knowledge should shine: metadata → cluster → optimal set.
+  # If the LLM is useful, LLM-CUCB-AT should converge much faster than pure CUCB here.
+  - type: synthetic_bernoulli
+    d: 50
+    m: 5
+    gap_type: clustered
+    delta_min: 0.05
+
+oracles:
+  # Real Bedrock: Llama 4 Scout 17B via US cross-region inference profile.
+  #
+  # Why Llama 4 Scout:
+  #   - Open weights on HuggingFace (meta-llama/Llama-4-Scout-17B-16E-Instruct)
+  #     → scientifically reproducible: anyone can inspect/download weights
+  #   - 17B active params (109B total MoE), strong instruction following
+  #   - ~10x cheaper than Claude Sonnet on Bedrock
+  #   - Cross-region profile (us.meta.llama4-scout-17b-instruct-v1:0)
+  #     routes across us-east-1 + us-west-2 for higher throughput
+  #   - Released April 2025 — state-of-the-art at this price point
+  - type: llm
+    provider: bedrock
+    primary_model: us.meta.llama4-scout-17b-instruct-v1:0
+    requery_model: us.meta.llama4-scout-17b-instruct-v1:0
+    region: us-east-1
+    K: 3
+    temperature: 0.7
+    schedule: sqrt
+    cache_dir: cache/oracle_exp9_bedrock
