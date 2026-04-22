@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch CombBandits on EC2 p3.2xlarge (1x V100 16GB, 8 vCPUs, 61GB RAM).
+# Launch CombBandits on EC2 g4dn.2xlarge (1x T4 16GB, 8 vCPUs, 32GB RAM).
 # Runs ALL experiments including GPU-batched (exp8) and local Llama 4 Scout (exp9_local).
 # Self-terminates and pushes results to S3 + GitHub when done.
 #
@@ -9,22 +9,27 @@
 #   IAM role princetoncourses-ec2    — Bedrock + S3 + SSM access
 #   SSM param /combbandits/github_token  — GitHub PAT
 #   SSM param /combbandits/hf_token      — HuggingFace token (for Llama 4 Scout)
+#
+# Quota required: "Running On-Demand G and VT instances" >= 8 vCPUs
+#   Check:   aws service-quotas get-service-quota --service-code ec2 --quota-code L-DB2E81BA
+#   Request: aws service-quotas request-service-quota-increase --service-code ec2 --quota-code L-DB2E81BA --desired-value 8
 set -euo pipefail
 
 REGION="us-east-1"
 KEY_NAME="combbandits-key"
 KEY_PATH="$HOME/.ssh/combbandits-key.pem"
 INSTANCE_PROFILE="princetoncourses-ec2"
-# Latest Deep Learning Base OSS Nvidia (Ubuntu 22.04) — CUDA 12 pre-installed
+# Latest Deep Learning Base OSS Nvidia (Ubuntu 22.04) — CUDA 12 + drivers pre-installed
 AMI_ID="ami-03d653a715378d2e5"
-# p3.2xlarge: 8 vCPUs, 61 GB RAM, 1x V100 16 GB
-INSTANCE_TYPE="p3.2xlarge"
+# g4dn.2xlarge: 8 vCPUs, 32 GB RAM, 1x T4 16 GB, 225 GB NVMe local SSD
+INSTANCE_TYPE="g4dn.2xlarge"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  CombBandits p3.2xlarge Launcher"
-echo "  GPU:  V100 16 GB"
-echo "  CPUs: 8 vCPUs / 61 GB RAM"
+echo "  CombBandits g4dn.2xlarge Launcher"
+echo "  GPU:  NVIDIA T4 16 GB"
+echo "  CPUs: 8 vCPUs / 32 GB RAM"
+echo "  NVMe: 225 GB local SSD"
 echo "  Exps: exp4 exp5 exp6 exp7 exp8(GPU) exp9_bedrock exp9_local(GPU)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -46,8 +51,18 @@ if [[ "$SG_ID" == "None" || -z "$SG_ID" ]]; then
 fi
 echo "Security group: $SG_ID"
 
+# ── Pre-flight: quota check ────────────────────────────────────────────────
+GVT_QUOTA=$(aws service-quotas get-service-quota --service-code ec2 --quota-code L-DB2E81BA \
+  --query "Quota.Value" --output text 2>/dev/null || echo "0")
+echo "G/VT on-demand vCPU quota: $GVT_QUOTA (need >= 8)"
+if (( $(echo "$GVT_QUOTA < 8" | bc -l) )); then
+  echo "ERROR: Insufficient G/VT quota ($GVT_QUOTA vCPUs). Request increase:"
+  echo "  aws service-quotas request-service-quota-increase --service-code ec2 --quota-code L-DB2E81BA --desired-value 8"
+  exit 1
+fi
+
 # ── Launch ─────────────────────────────────────────────────────────────────
-# 100 GB EBS: repo + venv + model weights (~14 GB for Llama 4 Scout 4-bit) + results
+# 50 GB gp3 EBS root (repo + venv). Model weights + scratch go on 225 GB NVMe local SSD.
 INSTANCE_ID=$(aws ec2 run-instances \
   --region "$REGION" \
   --image-id "$AMI_ID" \
@@ -55,7 +70,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
   --key-name "$KEY_NAME" \
   --security-group-ids "$SG_ID" \
   --iam-instance-profile "Name=$INSTANCE_PROFILE" \
-  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":100,"VolumeType":"gp3","DeleteOnTermination":true}}]' \
+  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":50,"VolumeType":"gp3","DeleteOnTermination":true}}]' \
   --tag-specifications \
     "ResourceType=instance,Tags=[{Key=Name,Value=combbandits-gpu-runner},{Key=Project,Value=CombBandits}]" \
   --query "Instances[0].InstanceId" --output text)

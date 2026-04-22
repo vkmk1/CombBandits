@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs on the p3.2xlarge instance.
+# Runs on g4dn.2xlarge (1x T4 16GB, 8 vCPUs, 32GB RAM, 225GB NVMe).
 # Phase 1 (parallel): exp4, exp5, exp6, exp7, exp9_bedrock  — CPU
 # Phase 2 (GPU):      exp8_scaling_d                        — GPU batched
 # Phase 3 (GPU):      exp9_local (Llama 4 Scout + weights)  — GPU, workers=1
@@ -9,11 +9,16 @@ set -euo pipefail
 S3_BUCKET="combbandits-results-099841456154"
 REGION="us-east-1"
 LOG="$HOME/experiment.log"
-INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-INSTANCE_TYPE=$(curl -s http://169.254.169.254/latest/meta-data/instance-type)
 REPO="$HOME/CombBandits"
 VENV="$HOME/venv"
 GH_REPO="vkmk1/CombBandits"
+
+# IMDSv2 token for metadata queries
+IMDS_TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 300" 2>/dev/null || true)
+META_HEADER=(-H "X-aws-ec2-metadata-token: $IMDS_TOKEN")
+INSTANCE_ID=$(curl -s "${META_HEADER[@]}" http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || echo "unknown")
+INSTANCE_TYPE=$(curl -s "${META_HEADER[@]}" http://169.254.169.254/latest/meta-data/instance-type 2>/dev/null || echo "unknown")
 
 log() { echo "[$(date '+%H:%M:%S')] $*" | tee -a "$LOG"; }
 die() { log "FATAL: $*"; exit 1; }
@@ -28,12 +33,29 @@ cd "$REPO"
 log "GPU status:"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader | tee -a "$LOG"
 
+# ── Mount NVMe local SSD for scratch (model weights, HF cache) ────────────
+SCRATCH="/scratch"
+NVME_DEV=$(lsblk -dpno NAME,TYPE | awk '$2=="disk"{print $1}' | grep -v "$(lsblk -dpno NAME,MOUNTPOINT | awk '$2=="/"{print $1}')" | head -1 || true)
+if [[ -n "$NVME_DEV" && -b "$NVME_DEV" ]]; then
+  log "Formatting NVMe local SSD: $NVME_DEV -> $SCRATCH"
+  sudo mkfs.xfs -f "$NVME_DEV"
+  sudo mkdir -p "$SCRATCH"
+  sudo mount "$NVME_DEV" "$SCRATCH"
+  sudo chmod 777 "$SCRATCH"
+  export HF_HOME="$SCRATCH/hf_cache"
+  export TRANSFORMERS_CACHE="$SCRATCH/hf_cache"
+  mkdir -p "$HF_HOME"
+  log "NVMe mounted: $(df -h "$SCRATCH" | tail -1)"
+else
+  log "No NVMe local SSD found, using EBS root."
+  SCRATCH="$HOME"
+fi
+
 # ── Install into venv ──────────────────────────────────────────────────────
 log "Installing dependencies..."
 python3 -m venv "$VENV"
 "$VENV/bin/pip" install -q --upgrade pip
 "$VENV/bin/pip" install -q -e ".[dev]"
-# GPU extras: transformers for Llama 4 Scout, bitsandbytes for 4-bit quant
 "$VENV/bin/pip" install -q \
   "transformers>=4.47" accelerate "bitsandbytes>=0.41" \
   huggingface_hub scikit-learn
@@ -92,7 +114,7 @@ cat > metadata/run_info.json << RUNINFO
   "llm_oracle_local": {
     "model": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
     "quantization": "4-bit (bitsandbytes NF4)",
-    "device": "cuda (V100 16GB)",
+    "device": "cuda (T4 16GB)",
     "weight_tracking": "per-call: logprobs, attention, hidden-state PCA, entropy"
   },
   "experiments": ["exp4_mind","exp5_influence_max","exp6_workshop_main",
@@ -145,10 +167,9 @@ PYEOF
 }
 
 # ── PHASE 1: CPU experiments in parallel ──────────────────────────────────
-# 8 vCPUs total. exp6 is by far the heaviest (14K tasks).
+# g4dn.2xlarge: 8 vCPUs, 32 GB RAM. exp6 is the heaviest (14K tasks).
 # exp9_bedrock is API-latency bound — 4 workers is plenty.
 # Worker split: exp6=4, exp7=2, exp4=1, exp5=1, exp9_bedrock=4
-# (sum=12; OS + Python overhead keeps actual CPU well within 8)
 log "=== PHASE 1: CPU experiments (parallel) ==="
 
 run_exp exp4_mind            1 &  PID4=$!
