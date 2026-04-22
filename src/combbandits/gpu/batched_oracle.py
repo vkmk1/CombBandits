@@ -26,19 +26,18 @@ class BatchedSimulatedCLO:
         # Store optimal set as tensor: (m,)
         self.optimal_set = optimal_set.to(self.device)
 
-        # Precompute bad set for adversarial/consistent_wrong
         means = arm_means.to(self.device)
         opt_mask = torch.zeros(d, dtype=torch.bool, device=self.device)
         opt_mask[self.optimal_set] = True
-        suboptimal_means = means.clone()
-        suboptimal_means[opt_mask] = -1.0  # exclude optimal arms
 
         if corruption_type == "adversarial":
-            # Worst m arms
-            self._bad_set = torch.argsort(suboptimal_means)[:m]
+            masked = means.clone()
+            masked[opt_mask] = float("inf")
+            self._bad_set = torch.argsort(masked)[:m]
         else:
-            # Best m suboptimal arms (plausible but wrong)
-            self._bad_set = torch.argsort(suboptimal_means, descending=True)[:m]
+            masked = means.clone()
+            masked[opt_mask] = -float("inf")
+            self._bad_set = torch.argsort(masked, descending=True)[:m]
 
     def _generate_sets_batched(self) -> torch.Tensor:
         """Generate one set per seed: (n_seeds, m).

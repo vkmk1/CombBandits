@@ -1,0 +1,81 @@
+# Round 5: Full-scale validation of Pool-CTS and Pool-CTS-IC as NeurIPS hero algorithms.
+# Runs on AWS g4dn.2xlarge (GPU) to get NeurIPS-grade horizon and seed counts.
+#
+# After Round 4 selects the hero IC variant, this config validates across:
+#   - 3 gap structures (uniform, clustered, graded)
+#   - 3 dimensions (d = 50, 100, 200)
+#   - 5 corruption scenarios
+#   - T = 100,000, 100 seeds (20× more compute than Round 3/4)
+
+name: round5_scale
+
+T: 100000
+n_seeds: 100
+log_interval: 20000
+
+agents:
+  # Baselines
+  - cucb
+  - cts
+  - llm_cucb_at        # Original method (straw man)
+  - corrupt_robust_cucb
+  # Winners
+  - pool_restrict      # Round 2 winner
+  - pool_cts           # Round 3 champion (fails on consistent_wrong)
+  # Round 4 hero (replace with final winner after Round 4 completes)
+  - pool_cts_ic100     # Round 4 leading candidate
+  - pool_cts_ic100_40  # Alternative
+
+environments:
+  # Uniform gap
+  - type: synthetic_bernoulli
+    d: 50
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+  - type: synthetic_bernoulli
+    d: 200
+    m: 10
+    gap_type: uniform
+    delta_min: 0.05
+
+  # Clustered gap (large separation)
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: clustered
+    delta_min: 0.05
+
+  # Graded gap (varying gaps)
+  - type: synthetic_bernoulli
+    d: 100
+    m: 10
+    gap_type: graded
+    delta_min: 0.02
+
+oracles:
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.0          # Perfect oracle
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.3          # Random corruption
+    K: 3
+  - type: simulated
+    corruption_type: uniform
+    epsilon: 0.5          # Heavy random corruption
+    K: 3
+  - type: simulated
+    corruption_type: consistent_wrong  # The decisive test
+    epsilon: 1.0
+    K: 3
+  - type: simulated
+    corruption_type: adversarial
+    epsilon: 0.3
+    K: 3

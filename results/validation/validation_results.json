@@ -1,0 +1,578 @@
+[
+  {
+    "name": "claim1_perfect_oracle",
+    "description": "Perfect oracle: LLM-CUCB-AT should match CUCB (O(d log d) regret)",
+    "agents": {
+      "uniform_eps0.0": {
+        "cucb": {
+          "mean_regret": 7701.1635546875,
+          "std_regret": 177.90604260288885,
+          "median_regret": 7685.907470703125,
+          "min_regret": 7335.50732421875,
+          "max_regret": 8117.9560546875,
+          "elapsed_s": 19.2
+        },
+        "cts": {
+          "mean_regret": 1530.745576171875,
+          "std_regret": 174.23095795969004,
+          "median_regret": 1502.3595581054688,
+          "min_regret": 1267.4862060546875,
+          "max_regret": 2469.5185546875,
+          "elapsed_s": 69.6
+        },
+        "llm_cucb_at": {
+          "mean_regret": 3214.4253662109377,
+          "std_regret": 312.446373964205,
+          "median_regret": 3128.1839599609375,
+          "min_regret": 2765.8212890625,
+          "max_regret": 4055.741943359375,
+          "elapsed_s": 53.4
+        },
+        "llm_greedy": {
+          "mean_regret": 0.0,
+          "std_regret": 0.0,
+          "median_regret": 0.0,
+          "min_regret": 0.0,
+          "max_regret": 0.0,
+          "elapsed_s": 15.0
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.76624298095703,
+          "std_regret": 0.0,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 23.76624298095703,
+          "elapsed_s": 29.0
+        },
+        "opro_bandit": {
+          "mean_regret": 0.0,
+          "std_regret": 0.0,
+          "median_regret": 0.0,
+          "min_regret": 0.0,
+          "max_regret": 0.0,
+          "elapsed_s": 15.0
+        },
+        "warm_start_cts": {
+          "mean_regret": 1342.6429370117187,
+          "std_regret": 96.42830640930008,
+          "median_regret": 1333.5391845703125,
+          "min_regret": 1154.40185546875,
+          "max_regret": 1544.66845703125,
+          "elapsed_s": 70.5
+        },
+        "corrupt_robust_cucb": {
+          "mean_regret": 7686.39578125,
+          "std_regret": 186.97482776848543,
+          "median_regret": 7675.828857421875,
+          "min_regret": 7082.48095703125,
+          "max_regret": 8103.36376953125,
+          "elapsed_s": 19.5
+        },
+        "exp4": {
+          "mean_regret": 296.0790662574768,
+          "std_regret": 1098.5912972384835,
+          "median_regret": 62.64815330505371,
+          "min_regret": 0.0,
+          "max_regret": 7867.1455078125,
+          "elapsed_s": 34.9
+        }
+      }
+    }
+  },
+  {
+    "name": "claim2_graceful_degradation",
+    "description": "Increasing corruption: regret should grow smoothly with \u03b5",
+    "agents": {
+      "uniform_eps0.05": {
+        "cucb": {
+          "mean_regret": 7745.403740234375,
+          "std_regret": 205.04686297328814,
+          "median_regret": 7737.12255859375,
+          "min_regret": 7323.5107421875,
+          "max_regret": 8167.8955078125,
+          "elapsed_s": 19.3
+        },
+        "cts": {
+          "mean_regret": 1565.385322265625,
+          "std_regret": 393.0720545965428,
+          "median_regret": 1495.5857543945312,
+          "min_regret": 1304.3636474609375,
+          "max_regret": 4092.65283203125,
+          "elapsed_s": 70.0
+        },
+        "llm_cucb_at": {
+          "mean_regret": 7657.649228515625,
+          "std_regret": 213.96897008947545,
+          "median_regret": 7626.7734375,
+          "min_regret": 7195.16748046875,
+          "max_regret": 8135.6962890625,
+          "elapsed_s": 60.7
+        },
+        "llm_greedy": {
+          "mean_regret": 5969.361640625,
+          "std_regret": 111.42135456339771,
+          "median_regret": 5959.674072265625,
+          "min_regret": 5694.98974609375,
+          "max_regret": 6192.49755859375,
+          "elapsed_s": 24.8
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.76624298095703,
+          "std_regret": 0.0,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 23.76624298095703,
+          "elapsed_s": 34.0
+        },
+        "exp4": {
+          "mean_regret": 6100.393134765625,
+          "std_regret": 375.58092081440446,
+          "median_regret": 6030.3720703125,
+          "min_regret": 5701.82568359375,
+          "max_regret": 7789.32080078125,
+          "elapsed_s": 40.9
+        }
+      },
+      "uniform_eps0.1": {
+        "cucb": {
+          "mean_regret": 7711.308701171875,
+          "std_regret": 199.96384671273464,
+          "median_regret": 7716.735595703125,
+          "min_regret": 7273.44970703125,
+          "max_regret": 8191.41650390625,
+          "elapsed_s": 19.1
+        },
+        "cts": {
+          "mean_regret": 1530.0397778320312,
+          "std_regret": 173.4202253140666,
+          "median_regret": 1508.103759765625,
+          "min_regret": 1325.0244140625,
+          "max_regret": 2244.2880859375,
+          "elapsed_s": 70.2
+        },
+        "llm_cucb_at": {
+          "mean_regret": 7698.21880859375,
+          "std_regret": 151.87201310856042,
+          "median_regret": 7704.017333984375,
+          "min_regret": 7402.21044921875,
+          "max_regret": 8017.89111328125,
+          "elapsed_s": 61.9
+        },
+        "llm_greedy": {
+          "mean_regret": 11879.41412109375,
+          "std_regret": 135.2359632331108,
+          "median_regret": 11864.78955078125,
+          "min_regret": 11481.6279296875,
+          "max_regret": 12248.9833984375,
+          "elapsed_s": 25.5
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.76624298095703,
+          "std_regret": 0.0,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 23.76624298095703,
+          "elapsed_s": 34.9
+        },
+        "exp4": {
+          "mean_regret": 11860.38748046875,
+          "std_regret": 676.9917981897423,
+          "median_regret": 11976.88330078125,
+          "min_regret": 7366.5205078125,
+          "max_regret": 12433.765625,
+          "elapsed_s": 41.9
+        }
+      },
+      "uniform_eps0.2": {
+        "cucb": {
+          "mean_regret": 7690.06775390625,
+          "std_regret": 205.55644364844872,
+          "median_regret": 7695.106201171875,
+          "min_regret": 7217.2783203125,
+          "max_regret": 8131.3642578125,
+          "elapsed_s": 19.4
+        },
+        "cts": {
+          "mean_regret": 1540.8431665039063,
+          "std_regret": 167.42738692974353,
+          "median_regret": 1512.3156127929688,
+          "min_regret": 1303.84521484375,
+          "max_regret": 2282.37255859375,
+          "elapsed_s": 70.5
+        },
+        "llm_cucb_at": {
+          "mean_regret": 7667.642451171875,
+          "std_regret": 198.10958877061677,
+          "median_regret": 7655.8427734375,
+          "min_regret": 7295.84375,
+          "max_regret": 8143.84375,
+          "elapsed_s": 63.7
+        },
+        "llm_greedy": {
+          "mean_regret": 23814.91421875,
+          "std_regret": 232.1875534391368,
+          "median_regret": 23848.2666015625,
+          "min_regret": 23384.439453125,
+          "max_regret": 24298.822265625,
+          "elapsed_s": 27.0
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.76624298095703,
+          "std_regret": 0.0,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 23.76624298095703,
+          "elapsed_s": 36.2
+        },
+        "exp4": {
+          "mean_regret": 21691.498447265625,
+          "std_regret": 5534.527167994265,
+          "median_regret": 23857.2333984375,
+          "min_regret": 7595.68701171875,
+          "max_regret": 24571.72265625,
+          "elapsed_s": 43.3
+        }
+      },
+      "uniform_eps0.3": {
+        "cucb": {
+          "mean_regret": 7637.121201171875,
+          "std_regret": 208.0989803873829,
+          "median_regret": 7638.18701171875,
+          "min_regret": 7098.94580078125,
+          "max_regret": 8100.65283203125,
+          "elapsed_s": 19.5
+        },
+        "cts": {
+          "mean_regret": 1526.7537646484375,
+          "std_regret": 187.16079411418295,
+          "median_regret": 1490.0941162109375,
+          "min_regret": 1267.334228515625,
+          "max_regret": 2591.9970703125,
+          "elapsed_s": 69.6
+        },
+        "llm_cucb_at": {
+          "mean_regret": 7697.766845703125,
+          "std_regret": 178.01413270052106,
+          "median_regret": 7702.3408203125,
+          "min_regret": 7267.41845703125,
+          "max_regret": 8061.4697265625,
+          "elapsed_s": 65.7
+        },
+        "llm_greedy": {
+          "mean_regret": 35658.897421875,
+          "std_regret": 283.5876327495479,
+          "median_regret": 35640.84375,
+          "min_regret": 35030.21875,
+          "max_regret": 36467.07421875,
+          "elapsed_s": 28.5
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.88929439544678,
+          "std_regret": 0.44311942557546,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 26.730449676513672,
+          "elapsed_s": 37.6
+        },
+        "exp4": {
+          "mean_regret": 31663.592138671876,
+          "std_regret": 8597.656856018131,
+          "median_regret": 35634.029296875,
+          "min_regret": 7372.38037109375,
+          "max_regret": 36355.046875,
+          "elapsed_s": 44.9
+        }
+      },
+      "uniform_eps0.5": {
+        "cucb": {
+          "mean_regret": 7630.45400390625,
+          "std_regret": 192.22326247528537,
+          "median_regret": 7635.6259765625,
+          "min_regret": 7096.8955078125,
+          "max_regret": 8029.18896484375,
+          "elapsed_s": 19.3
+        },
+        "cts": {
+          "mean_regret": 1575.0678076171876,
+          "std_regret": 250.21585892414362,
+          "median_regret": 1496.2368774414062,
+          "min_regret": 1293.9512939453125,
+          "max_regret": 2733.288818359375,
+          "elapsed_s": 69.7
+        },
+        "llm_cucb_at": {
+          "mean_regret": 7669.237470703125,
+          "std_regret": 195.87747177917544,
+          "median_regret": 7668.1669921875,
+          "min_regret": 7236.29150390625,
+          "max_regret": 8095.39599609375,
+          "elapsed_s": 69.2
+        },
+        "llm_greedy": {
+          "mean_regret": 59445.133984375,
+          "std_regret": 278.2955152037151,
+          "median_regret": 59401.40234375,
+          "min_regret": 59006.3984375,
+          "max_regret": 60150.046875,
+          "elapsed_s": 31.2
+        },
+        "ellm_adapted": {
+          "mean_regret": 24.58214267730713,
+          "std_regret": 1.1696848755284686,
+          "median_regret": 23.892212867736816,
+          "min_regret": 23.76624298095703,
+          "max_regret": 28.92061996459961,
+          "elapsed_s": 40.0
+        },
+        "exp4": {
+          "mean_regret": 25836.22994140625,
+          "std_regret": 24148.202512927764,
+          "median_regret": 8916.21826171875,
+          "min_regret": 7268.61181640625,
+          "max_regret": 59826.3984375,
+          "elapsed_s": 47.7
+        }
+      }
+    }
+  },
+  {
+    "name": "claim3_consistent_wrong",
+    "description": "Consistently wrong oracle: LLM-CUCB-AT recovers, naive LLM methods fail",
+    "agents": {
+      "consistent_wrong_eps1.0": {
+        "cucb": {
+          "mean_regret": 7642.9437109375,
+          "std_regret": 233.7144983771047,
+          "median_regret": 7661.87451171875,
+          "min_regret": 7221.748046875,
+          "max_regret": 8136.76513671875,
+          "elapsed_s": 19.3
+        },
+        "cts": {
+          "mean_regret": 1524.8165063476563,
+          "std_regret": 148.4748130401893,
+          "median_regret": 1506.5765380859375,
+          "min_regret": 1252.6875,
+          "max_regret": 2160.109375,
+          "elapsed_s": 70.1
+        },
+        "llm_cucb_at": {
+          "mean_regret": 30899.14625,
+          "std_regret": 234.21425943190167,
+          "median_regret": 30894.5625,
+          "min_regret": 30413.123046875,
+          "max_regret": 31541.265625,
+          "elapsed_s": 53.1
+        },
+        "llm_greedy": {
+          "mean_regret": 36506.6640625,
+          "std_regret": 0.0,
+          "median_regret": 36506.6640625,
+          "min_regret": 36506.6640625,
+          "max_regret": 36506.6640625,
+          "elapsed_s": 12.0
+        },
+        "ellm_adapted": {
+          "mean_regret": 36523.14453125,
+          "std_regret": 0.0,
+          "median_regret": 36523.14453125,
+          "min_regret": 36523.14453125,
+          "max_regret": 36523.14453125,
+          "elapsed_s": 26.3
+        },
+        "opro_bandit": {
+          "mean_regret": 36506.6640625,
+          "std_regret": 0.0,
+          "median_regret": 36506.6640625,
+          "min_regret": 36506.6640625,
+          "max_regret": 36506.6640625,
+          "elapsed_s": 12.0
+        },
+        "warm_start_cts": {
+          "mean_regret": 1589.0976025390626,
+          "std_regret": 497.5665933869436,
+          "median_regret": 1506.8099975585938,
+          "min_regret": 1234.7381591796875,
+          "max_regret": 4131.19873046875,
+          "elapsed_s": 70.6
+        },
+        "corrupt_robust_cucb": {
+          "mean_regret": 7709.1000390625,
+          "std_regret": 220.78274171257283,
+          "median_regret": 7707.307373046875,
+          "min_regret": 7369.310546875,
+          "max_regret": 8459.5,
+          "elapsed_s": 19.7
+        },
+        "exp4": {
+          "mean_regret": 34884.699013671874,
+          "std_regret": 6824.285952986228,
+          "median_regret": 36549.73828125,
+          "min_regret": 7366.2734375,
+          "max_regret": 37042.8984375,
+          "elapsed_s": 32.1
+        }
+      }
+    }
+  },
+  {
+    "name": "claim4_adversarial",
+    "description": "Adversarial oracle: LLM-CUCB-AT \u2264 CUCB regret",
+    "agents": {
+      "adversarial_eps0.3": {
+        "cucb": {
+          "mean_regret": 7714.370537109375,
+          "std_regret": 212.87190814355068,
+          "median_regret": 7700.60107421875,
+          "min_regret": 7237.470703125,
+          "max_regret": 8232.2685546875,
+          "elapsed_s": 19.5
+        },
+        "cts": {
+          "mean_regret": 1487.199697265625,
+          "std_regret": 99.68696075635566,
+          "median_regret": 1484.7606201171875,
+          "min_regret": 1301.216064453125,
+          "max_regret": 1769.977783203125,
+          "elapsed_s": 70.1
+        },
+        "llm_cucb_at": {
+          "mean_regret": 3243.6015234375,
+          "std_regret": 393.27229699121216,
+          "median_regret": 3170.698486328125,
+          "min_regret": 2747.515869140625,
+          "max_regret": 4818.455078125,
+          "elapsed_s": 57.4
+        },
+        "llm_greedy": {
+          "mean_regret": 0.0,
+          "std_regret": 0.0,
+          "median_regret": 0.0,
+          "min_regret": 0.0,
+          "max_regret": 0.0,
+          "elapsed_s": 17.8
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.76624298095703,
+          "std_regret": 0.0,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 23.76624298095703,
+          "elapsed_s": 31.6
+        },
+        "opro_bandit": {
+          "mean_regret": 0.0,
+          "std_regret": 0.0,
+          "median_regret": 0.0,
+          "min_regret": 0.0,
+          "max_regret": 0.0,
+          "elapsed_s": 17.9
+        },
+        "warm_start_cts": {
+          "mean_regret": 1332.9187158203124,
+          "std_regret": 107.53403394658827,
+          "median_regret": 1323.5758056640625,
+          "min_regret": 1123.03271484375,
+          "max_regret": 1569.225830078125,
+          "elapsed_s": 70.1
+        },
+        "corrupt_robust_cucb": {
+          "mean_regret": 7699.36013671875,
+          "std_regret": 205.73874303274692,
+          "median_regret": 7689.219970703125,
+          "min_regret": 7277.5576171875,
+          "max_regret": 8145.25830078125,
+          "elapsed_s": 19.7
+        },
+        "exp4": {
+          "mean_regret": 558.0545324993134,
+          "std_regret": 1772.6747612697845,
+          "median_regret": 44.236454010009766,
+          "min_regret": 0.0,
+          "max_regret": 7671.34228515625,
+          "elapsed_s": 37.2
+        }
+      }
+    }
+  },
+  {
+    "name": "claim5_partial_overlap",
+    "description": "Partial overlap: tests graded quality model",
+    "agents": {
+      "partial_overlap_eps0.2": {
+        "cucb": {
+          "mean_regret": 7685.2831640625,
+          "std_regret": 200.61606337228375,
+          "median_regret": 7710.61083984375,
+          "min_regret": 7276.58544921875,
+          "max_regret": 8108.0048828125,
+          "elapsed_s": 19.3
+        },
+        "cts": {
+          "mean_regret": 1545.0700512695312,
+          "std_regret": 217.7951583391973,
+          "median_regret": 1511.4210815429688,
+          "min_regret": 1323.7886962890625,
+          "max_regret": 2577.91015625,
+          "elapsed_s": 70.4
+        },
+        "llm_cucb_at": {
+          "mean_regret": 7692.1729296875,
+          "std_regret": 182.739221044073,
+          "median_regret": 7706.929443359375,
+          "min_regret": 7271.26171875,
+          "max_regret": 8048.02734375,
+          "elapsed_s": 78.5
+        },
+        "llm_greedy": {
+          "mean_regret": 26408.92421875,
+          "std_regret": 30.612903599475363,
+          "median_regret": 26405.19921875,
+          "min_regret": 26344.470703125,
+          "max_regret": 26488.728515625,
+          "elapsed_s": 41.4
+        },
+        "ellm_adapted": {
+          "mean_regret": 23.771493759155273,
+          "std_regret": 0.03675544738769531,
+          "median_regret": 23.76624298095703,
+          "min_regret": 23.76624298095703,
+          "max_regret": 24.02878189086914,
+          "elapsed_s": 50.4
+        },
+        "opro_bandit": {
+          "mean_regret": 26395.4587890625,
+          "std_regret": 34.32838620891692,
+          "median_regret": 26397.8330078125,
+          "min_regret": 26331.515625,
+          "max_regret": 26484.060546875,
+          "elapsed_s": 42.6
+        },
+        "warm_start_cts": {
+          "mean_regret": 1451.027529296875,
+          "std_regret": 451.0481289510761,
+          "median_regret": 1373.3895874023438,
+          "min_regret": 1156.1007080078125,
+          "max_regret": 4476.296875,
+          "elapsed_s": 70.0
+        },
+        "corrupt_robust_cucb": {
+          "mean_regret": 7702.703837890625,
+          "std_regret": 174.39896651318347,
+          "median_regret": 7692.65234375,
+          "min_regret": 7353.7216796875,
+          "max_regret": 8288.51953125,
+          "elapsed_s": 20.0
+        },
+        "exp4": {
+          "mean_regret": 25421.02703125,
+          "std_regret": 4326.436666042793,
+          "median_regret": 26451.11328125,
+          "min_regret": 7403.5908203125,
+          "max_regret": 27525.216796875,
+          "elapsed_s": 58.1
+        }
+      }
+    }
+  }
+]
