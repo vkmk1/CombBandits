@@ -46,17 +46,13 @@ class BatchedSimulatedCLO:
         Returns arm indices for each seed's oracle suggestion.
         """
         if self.corruption_type == "uniform":
-            # For each seed, with prob epsilon return random set, else optimal
             corrupt_mask = torch.rand(self.n_seeds, device=self.device) < self.epsilon
-            # Start with optimal for all seeds
             result = self.optimal_set.unsqueeze(0).expand(self.n_seeds, -1).clone()
-            # For corrupt seeds, generate random sets
             n_corrupt = corrupt_mask.sum().item()
             if n_corrupt > 0:
-                random_sets = torch.stack([
-                    torch.randperm(self.d, device=self.device)[:self.m]
-                    for _ in range(n_corrupt)
-                ])
+                # Vectorized random set generation via argsort of random values
+                rand_scores = torch.rand(n_corrupt, self.d, device=self.device)
+                random_sets = torch.topk(rand_scores, self.m, dim=1).indices
                 result[corrupt_mask] = random_sets
             return result
 
@@ -69,14 +65,16 @@ class BatchedSimulatedCLO:
         elif self.corruption_type == "partial_overlap":
             n_correct = max(0, int((1 - self.epsilon) * self.m))
             n_wrong = self.m - n_correct
-            results = []
-            for _ in range(self.n_seeds):
-                correct = self.optimal_set[torch.randperm(self.m, device=self.device)[:n_correct]]
-                pool = torch.tensor([i for i in range(self.d) if i not in correct],
-                                    device=self.device)
-                wrong = pool[torch.randperm(len(pool), device=self.device)[:n_wrong]]
-                results.append(torch.cat([correct, wrong]))
-            return torch.stack(results)
+            # Vectorized sampling via argsort of random scores
+            rand_opt = torch.rand(self.n_seeds, self.m, device=self.device)
+            correct = self.optimal_set[torch.topk(rand_opt, n_correct, dim=1).indices]
+            all_arms = torch.arange(self.d, device=self.device)
+            opt_mask = torch.zeros(self.d, dtype=torch.bool, device=self.device)
+            opt_mask[self.optimal_set] = True
+            non_opt = all_arms[~opt_mask]
+            rand_non = torch.rand(self.n_seeds, len(non_opt), device=self.device)
+            wrong = non_opt[torch.topk(rand_non, n_wrong, dim=1).indices]
+            return torch.cat([correct, wrong], dim=1)
 
         elif self.corruption_type == "consistent_wrong":
             # All seeds get the same bad set
