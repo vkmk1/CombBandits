@@ -1,0 +1,74 @@
+[
+  {
+    "agent": "cucb",
+    "regret": 319.8,
+    "elapsed_sec": 0.05,
+    "oracle_queries": 0,
+    "oracle_tokens": 0,
+    "oracle_mean_overlap": 0,
+    "oracle_perfect_rate": 0
+  },
+  {
+    "agent": "cts",
+    "regret": 176.6,
+    "elapsed_sec": 0.05,
+    "oracle_queries": 0,
+    "oracle_tokens": 0,
+    "oracle_mean_overlap": 0,
+    "oracle_perfect_rate": 0
+  },
+  {
+    "agent": "warm_start_cts",
+    "regret": 140.1,
+    "elapsed_sec": 25.09,
+    "oracle_queries": 3,
+    "oracle_tokens": 1634,
+    "oracle_mean_overlap": 0.0,
+    "oracle_perfect_rate": 0.0
+  },
+  {
+    "agent": "pool_cts",
+    "regret": 235.4,
+    "elapsed_sec": 44.94,
+    "oracle_queries": 30,
+    "oracle_tokens": 16340,
+    "oracle_mean_overlap": 0.07,
+    "oracle_perfect_rate": 0.0
+  },
+  {
+    "agent": "pool_cts_ic",
+    "regret": 137.4,
+    "elapsed_sec": 32.78,
+    "oracle_queries": 30,
+    "oracle_tokens": 16340,
+    "oracle_mean_overlap": 0.43,
+    "oracle_perfect_rate": 0.0
+  },
+  {
+    "agent": "warm_pool_cts",
+    "regret": 249.9,
+    "elapsed_sec": 31.76,
+    "oracle_queries": 30,
+    "oracle_tokens": 16340,
+    "oracle_mean_overlap": 0.57,
+    "oracle_perfect_rate": 0.0
+  },
+  {
+    "agent": "adaptive_pool_abstain",
+    "regret": 209.1,
+    "elapsed_sec": 132.1,
+    "oracle_queries": 120,
+    "oracle_tokens": 65360,
+    "oracle_mean_overlap": 0.58,
+    "oracle_perfect_rate": 0.0
+  },
+  {
+    "agent": "adaptive_freq_dual",
+    "regret": 328.5,
+    "elapsed_sec": 35.84,
+    "oracle_queries": 30,
+    "oracle_tokens": 16340,
+    "oracle_mean_overlap": 0.0,
+    "oracle_perfect_rate": 0.0
+  }
+]

@@ -1,0 +1,69 @@
+================================================================================
+PRODUCTION REAL-LLM EXPERIMENT RESULTS
+================================================================================
+Configs: 20 | Seeds: 20 | Agents: 9 | T: 2000
+Model: us.anthropic.claude-haiku-4-5-20251001-v1:0
+
+--- OVERALL RANKING (mean ± stderr, 95% CI) ---
+  warm_start_cts                   262.7 ±   6.6  [  249.8,   275.6]  median=226.1
+  cts                              273.7 ±   7.1  [  259.9,   287.5]  median=221.5
+  kwik_query_cts                   309.0 ±  10.0  [  289.4,   328.6]  median=249.4
+  adaptive_pool_abstain            313.3 ±   8.3  [  297.0,   329.6]  median=270.9
+  eoe_adaptive                     455.5 ±  16.6  [  422.9,   488.1]  median=401.4
+  pool_cts_ic                      471.4 ±  18.3  [  435.6,   507.3]  median=423.2
+  warm_pool_cts                    648.8 ±  19.8  [  610.0,   687.6]  median=580.0
+  cucb                             700.8 ±  14.0  [  673.2,   728.3]  median=615.0
+  pool_cts                         749.3 ±  25.6  [  699.2,   799.4]  median=615.4
+
+--- HARD (n=11 configs) ---
+  warm_start_cts                   304.2 ±   9.1
+  cts                              321.5 ±   9.8
+  kwik_query_cts                   321.6 ±  11.8
+  adaptive_pool_abstain            324.4 ±  10.3
+  eoe_adaptive                     485.4 ±  22.1
+  pool_cts_ic                      505.4 ±  23.1
+  warm_pool_cts                    647.1 ±  26.5
+  pool_cts                         665.8 ±  31.6
+  cucb                             700.5 ±  20.0
+
+--- UNIFORM (n=9 configs) ---
+  warm_start_cts                   212.0 ±   8.0
+  cts                              215.3 ±   8.2
+  kwik_query_cts                   293.6 ±  16.9
+  adaptive_pool_abstain            299.7 ±  13.5
+  eoe_adaptive                     418.9 ±  25.1
+  pool_cts_ic                      429.9 ±  29.0
+  warm_pool_cts                    651.0 ±  29.9
+  cucb                             701.2 ±  19.4
+  pool_cts                         851.2 ±  40.5
+
+--- WIN RATE ---
+  kwik_query_cts              :  108/400 (27.0%)
+  warm_start_cts              :   67/400 (16.8%)
+  adaptive_pool_abstain       :   57/400 (14.2%)
+  pool_cts_ic                 :   50/400 (12.5%)
+  eoe_adaptive                :   44/400 (11.0%)
+  cts                         :   39/400 (9.8%)
+  pool_cts                    :   32/400 (8.0%)
+  warm_pool_cts               :    3/400 (0.8%)
+
+--- ORACLE EFFICIENCY ---
+  agent                         queries   tokens  overlap  perfect
+  adaptive_pool_abstain              79    41369     3.22    0.390
+  eoe_adaptive                       10     5348     2.08    0.050
+  kwik_query_cts                     29    15400     2.86    0.130
+  pool_cts                           10     6002     0.58    0.000
+  pool_cts_ic                        10     5349     1.81    0.040
+  warm_pool_cts                      10     5336     1.58    0.000
+  warm_start_cts                      1      600     0.59    0.000
+
+--- WORST CASE ---
+  warm_start_cts                660.5
+  cts                           700.3
+  kwik_query_cts                1000.0
+  adaptive_pool_abstain         1014.8
+  cucb                          1337.6
+  eoe_adaptive                  1613.6
+  warm_pool_cts                 1995.0
+  pool_cts_ic                   2502.4
+  pool_cts                      2503.4

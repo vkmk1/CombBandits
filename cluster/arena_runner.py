@@ -49,6 +49,10 @@ from arena_novel_algos_v4 import (
 from arena_novel_algos_v5 import (
     AdaptivePoolDual, AdaptivePoolAbstain, AdaptivePoolDoubling, AdaptiveFreqDual,
 )
+from arena_novel_algos_v6 import (
+    ExploreOracleExploit, EOEAdaptive, InfoDesignedPoolCTS, RankingOraclePool,
+    KWIKQueryCTS, DoublingKWIKPool, EOEInfoKWIK,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -262,6 +266,15 @@ def build_agent_factories() -> dict[str, callable]:
     factories["adaptive_pool_abstain"] = lambda d, m, n_seeds, device, oracle: AdaptivePoolAbstain(d, m, n_seeds, device, oracle)
     factories["adaptive_pool_doubling"] = lambda d, m, n_seeds, device, oracle: AdaptivePoolDoubling(d, m, n_seeds, device, oracle)
     factories["adaptive_freq_dual"] = lambda d, m, n_seeds, device, oracle: AdaptiveFreqDual(d, m, n_seeds, device, oracle)
+
+    # --- V6: Novel algorithms from real LLM findings ---
+    factories["explore_oracle_exploit"] = lambda d, m, n_seeds, device, oracle: ExploreOracleExploit(d, m, n_seeds, device, oracle)
+    factories["eoe_adaptive"] = lambda d, m, n_seeds, device, oracle: EOEAdaptive(d, m, n_seeds, device, oracle)
+    factories["info_designed_pool"] = lambda d, m, n_seeds, device, oracle: InfoDesignedPoolCTS(d, m, n_seeds, device, oracle)
+    factories["ranking_oracle_pool"] = lambda d, m, n_seeds, device, oracle: RankingOraclePool(d, m, n_seeds, device, oracle)
+    factories["kwik_query_cts"] = lambda d, m, n_seeds, device, oracle: KWIKQueryCTS(d, m, n_seeds, device, oracle)
+    factories["doubling_kwik_pool"] = lambda d, m, n_seeds, device, oracle: DoublingKWIKPool(d, m, n_seeds, device, oracle)
+    factories["eoe_info_kwik"] = lambda d, m, n_seeds, device, oracle: EOEInfoKWIK(d, m, n_seeds, device, oracle)
 
     return factories
 
