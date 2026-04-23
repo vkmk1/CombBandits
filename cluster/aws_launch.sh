@@ -62,7 +62,7 @@ if (( $(echo "$GVT_QUOTA < 8" | bc -l) )); then
 fi
 
 # ── Launch ─────────────────────────────────────────────────────────────────
-# 50 GB gp3 EBS root (repo + venv). Model weights + scratch go on 225 GB NVMe local SSD.
+# 75 GB gp3 EBS root (AMI minimum). Model weights + scratch go on 225 GB NVMe local SSD.
 INSTANCE_ID=$(aws ec2 run-instances \
   --region "$REGION" \
   --image-id "$AMI_ID" \
@@ -70,7 +70,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
   --key-name "$KEY_NAME" \
   --security-group-ids "$SG_ID" \
   --iam-instance-profile "Name=$INSTANCE_PROFILE" \
-  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":50,"VolumeType":"gp3","DeleteOnTermination":true}}]' \
+  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":75,"VolumeType":"gp3","DeleteOnTermination":true}}]' \
   --tag-specifications \
     "ResourceType=instance,Tags=[{Key=Name,Value=combbandits-gpu-runner},{Key=Project,Value=CombBandits}]" \
   --query "Instances[0].InstanceId" --output text)

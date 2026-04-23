@@ -1,0 +1,144 @@
+\begin{thebibliography}{22}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Alamdari et~al.(2024)]{alamdari2024jumpstarting}
+Alamdari, P. et~al.
+\newblock Jump-starting bandits with {LLM}-generated prior knowledge.
+\newblock \emph{arXiv:2406.19317}, 2024.
+
+\bibitem[Anonymous(2025)]{calibgated2025}
+Anonymous.
+\newblock Calibration-gated {LLM} pseudo-observations for online contextual
+  bandits.
+\newblock \emph{arXiv:2604.14961}, 2025.
+
+\bibitem[Auer et~al.(2002)Auer, Cesa-Bianchi, Freund, and
+  Schapire]{auer2002exp4}
+Auer, P., Cesa-Bianchi, N., Freund, Y., and Schapire, R.~E.
+\newblock The nonstochastic multiarmed bandit problem.
+\newblock In \emph{SIAM Journal on Computing}, 2002.
+
+\bibitem[Bayley et~al.(2025)Bayley, Zhu, Aoki, Cao, and
+  Wilson]{bayley2025jumpstart}
+Bayley, E., Zhu, A., Aoki, K., Cao, R., and Wilson, M.
+\newblock Robustness of {LLM}-initialized bandits under noisy priors.
+\newblock \emph{Genai Personalization Workshop}, 2025.
+
+\bibitem[Cao et~al.(2026)Cao, Gao, Keyvanshokooh, and Ma]{cao2026libra}
+Cao, Y., Gao, L., Keyvanshokooh, E., and Ma, W.
+\newblock {LIBRA}: {LM}-informed bandit recourse algorithm.
+\newblock \emph{arXiv preprint}, 2026.
+
+\bibitem[Chen et~al.(2013)Chen, Wang, and Yuan]{chen2013cucb}
+Chen, W., Wang, Y., and Yuan, Y.
+\newblock Combinatorial multi-armed bandit: General framework and applications.
+\newblock In \emph{Proceedings of the 30th International Conference on Machine
+  Learning (ICML)}, 2013.
+
+\bibitem[Du et~al.(2023)Du, Watkins, Wang, Colas, Darrell, Abbeel, Gupta, and
+  Andreas]{du2023ellm}
+Du, Y., Watkins, O., Wang, Z., Colas, C., Darrell, T., Abbeel, P., Gupta, A.,
+  and Andreas, J.
+\newblock Guiding pretraining in reinforcement learning with large language
+  models.
+\newblock In \emph{Proceedings of the 40th International Conference on Machine
+  Learning (ICML)}, 2023.
+
+\bibitem[Fang et~al.(2025)]{fang2025barbat}
+Fang, J. et~al.
+\newblock {BARBAT}: A near-optimal scalable framework for stochastic bandits
+  robust to corruption.
+\newblock \emph{arXiv:2502.07514}, 2025.
+
+\bibitem[Gupta et~al.(2019)Gupta, Koren, and Talwar]{gupta2019better}
+Gupta, A., Koren, T., and Talwar, K.
+\newblock Better algorithms for stochastic bandits with adversarial
+  corruptions.
+\newblock In \emph{Proceedings of the 32nd Annual Conference on Learning Theory
+  (COLT)}, 2019.
+
+\bibitem[He et~al.(2022)He, Zhou, Zhang, and Gu]{he2022nearly}
+He, J., Zhou, D., Zhang, T., and Gu, Q.
+\newblock Nearly optimal algorithms for linear contextual bandits with
+  adversarial corruptions.
+\newblock In \emph{Advances in Neural Information Processing Systems 35
+  (NeurIPS)}, 2022.
+
+\bibitem[Kapoor et~al.(2019)Kapoor, Patel, and Kar]{kapoor2019corruption}
+Kapoor, S., Patel, K.~K., and Kar, P.
+\newblock Corruption-tolerant bandit learning.
+\newblock In \emph{Machine Learning}, 2019.
+
+\bibitem[Krishnamurthy et~al.(2024)Krishnamurthy, Harris, Foster, and
+  Slivkins]{krishnamurthy2024canllms}
+Krishnamurthy, A., Harris, K., Foster, D.~J., and Slivkins, A.
+\newblock Can large language models explore in-context?
+\newblock In \emph{Advances in Neural Information Processing Systems 37
+  (NeurIPS)}, 2024.
+
+\bibitem[Lattimore \& Szepesv{\'a}ri(2020)Lattimore and
+  Szepesv{\'a}ri]{lattimore2020book}
+Lattimore, T. and Szepesv{\'a}ri, C.
+\newblock \emph{Bandit Algorithms}.
+\newblock Cambridge University Press, 2020.
+
+\bibitem[Liu et~al.(2024)]{liu2024llambo}
+Liu, T. et~al.
+\newblock Large language models to enhance bayesian optimization.
+\newblock In \emph{Proceedings of the 12th International Conference on Learning
+  Representations (ICLR)}, 2024.
+
+\bibitem[Liu et~al.(2025)]{liu2025offcmab}
+Liu, X. et~al.
+\newblock Off-policy combinatorial multi-armed bandits with pretrained data.
+\newblock \emph{arXiv:2501.19300}, 2025.
+
+\bibitem[Lykouris \& Vassilvitskii(2018)Lykouris and
+  Vassilvitskii]{lykouris2018competitive}
+Lykouris, T. and Vassilvitskii, S.
+\newblock Competitive caching with machine learned advice.
+\newblock In \emph{Proceedings of the 35th International Conference on Machine
+  Learning (ICML)}, 2018.
+
+\bibitem[Lykouris et~al.(2018)Lykouris, Mirrokni, and
+  Paes~Leme]{lykouris2018robust}
+Lykouris, T., Mirrokni, V., and Paes~Leme, R.
+\newblock Stochastic bandits robust to adversarial corruptions.
+\newblock In \emph{Proceedings of the 50th Annual ACM SIGACT Symposium on
+  Theory of Computing (STOC)}, 2018.
+
+\bibitem[Nie et~al.(2024)]{nie2024evolve}
+Nie, A. et~al.
+\newblock {EVOLvE}: Evaluating and optimizing {LLM}s for exploration.
+\newblock \emph{arXiv:2410.06238}, 2024.
+
+\bibitem[Park et~al.(2025)Park, Liu, Ozdaglar, and Zhang]{park2025regret}
+Park, C., Liu, X., Ozdaglar, A., and Zhang, K.
+\newblock Do {LLM} agents have regret? a case study in online learning and
+  games.
+\newblock In \emph{Proceedings of the 13th International Conference on Learning
+  Representations (ICLR)}, 2025.
+
+\bibitem[Wang \& Chen(2018)Wang and Chen]{wang2018cts}
+Wang, S. and Chen, W.
+\newblock Thompson sampling for combinatorial semi-bandits.
+\newblock In \emph{Proceedings of the 35th International Conference on Machine
+  Learning (ICML)}, 2018.
+
+\bibitem[Wen et~al.(2025)]{wen2025adversarial}
+Wen, J. et~al.
+\newblock Adversarial combinatorial semi-bandits with graph feedback.
+\newblock \emph{arXiv:2502.18826}, 2025.
+
+\bibitem[Yang et~al.(2024)Yang, Wang, Lu, Liu, Le, Zhou, and
+  Chen]{yang2024opro}
+Yang, C., Wang, X., Lu, Y., Liu, H., Le, Q.~V., Zhou, D., and Chen, X.
+\newblock Large language models as optimizers.
+\newblock In \emph{Proceedings of the 12th International Conference on Learning
+  Representations (ICLR)}, 2024.
+
+\end{thebibliography}
