@@ -1,0 +1,84 @@
+==========================================================================================
+SMOKE TEST: 17 LLM-BANDIT ALGORITHMS vs CTS BASELINE
+==========================================================================================
+Trials per algo: 9
+
+--- OVERALL RANKING (lower regret = better) ---
+rank  algorithm                         mean_regret   stderr     vs_CTS
+1     B2_icpd_cts                             164.1    13.67     +17.9% <-- beats CTS
+2     F2_query_design_cts                     169.2    24.03     +15.3% <-- beats CTS
+3     A1_logprob_cts                          173.0    14.86     +13.4% <-- beats CTS
+4     E2_recursive_refinement_cts             182.6    13.10      +8.6% <-- beats CTS
+5     B1_pseudo_obs_cts                       187.7    27.53      +6.0% <-- beats CTS
+6     G2_counterfactual_cts                   189.0    22.08      +5.4% <-- beats CTS
+7     D3_pairwise_elo_cts                     189.3    15.00      +5.3% <-- beats CTS
+8     A2_distractor_cts                       191.4    19.60      +4.2% <-- beats CTS
+9     A3_temp_mixture_cts                     193.5    14.20      +3.2% <-- beats CTS
+10    C3_dipper_cts                           194.3    11.08      +2.8% <-- beats CTS
+11    B3_regret_loss_cts                      194.7    16.92      +2.6% <-- beats CTS
+12    C1_debate_cts                           195.0    12.54      +2.4% <-- beats CTS
+13    cts_baseline                            199.8    12.58      +0.0%
+14    C2_devils_advocate_cts                  200.8    14.12      -0.5%
+15    G1_llm_mcts_cts                         204.8    19.98      -2.5%
+16    WARM_warm_start_cts                     208.0    11.13      -4.1%
+17    F1_info_optimal_cts                     214.2    35.86      -7.2%
+18    E1_autoelicit_cts                       216.5     9.64      -8.4%
+19    E3_conformal_cts                        217.4    14.87      -8.8%
+20    D2_causal_graph_cts                     241.1    19.15     -20.7%
+21    D1_semantic_cluster_cts                 273.4    18.78     -36.8%
+
+--- PER-CONFIG MEAN REGRET ---
+algorithm                            cfg_0     cfg_1     cfg_2
+B2_icpd_cts                          152.1     141.2     198.9
+F2_query_design_cts                  134.2     125.0     248.2
+A1_logprob_cts                       177.0     160.4     181.6
+E2_recursive_refinement_cts          176.3     146.7     224.6
+B1_pseudo_obs_cts                    133.4     210.7     219.1
+G2_counterfactual_cts                183.7     175.5     207.7
+D3_pairwise_elo_cts                  193.3     148.2     226.4
+A2_distractor_cts                    168.4     152.9     253.0
+A3_temp_mixture_cts                  177.9     156.6     246.0
+C3_dipper_cts                        203.5     158.5     220.8
+B3_regret_loss_cts                   187.4     147.4     249.3
+C1_debate_cts                        183.7     174.4     226.9
+cts_baseline                         192.6     189.3     217.4
+C2_devils_advocate_cts               196.0     190.1     216.2
+G1_llm_mcts_cts                      190.6     172.1     251.8
+WARM_warm_start_cts                  220.1     194.2     209.6
+F1_info_optimal_cts                  146.4     187.9     308.4
+E1_autoelicit_cts                    235.3     188.4     225.7
+E3_conformal_cts                     217.7     192.1     242.5
+D2_causal_graph_cts                  252.3     221.3     249.8
+D1_semantic_cluster_cts              260.5     245.4     314.1
+
+--- WIN COUNT (how often each algo had lowest regret in (config, seed)) ---
+  F1_info_optimal_cts              2/9
+  A1_logprob_cts                   2/9
+  F2_query_design_cts              1/9
+  B2_icpd_cts                      1/9
+  A2_distractor_cts                1/9
+  B1_pseudo_obs_cts                1/9
+  G2_counterfactual_cts            1/9
+
+--- LLM COST (max calls per trial, cumulative across configs/seeds) ---
+  B2_icpd_cts                      max_calls_seen=278
+  F2_query_design_cts              max_calls_seen=292
+  A1_logprob_cts                   max_calls_seen=265
+  E2_recursive_refinement_cts      max_calls_seen=288
+  B1_pseudo_obs_cts                max_calls_seen=274
+  G2_counterfactual_cts            max_calls_seen=297
+  D3_pairwise_elo_cts              max_calls_seen=286
+  A2_distractor_cts                max_calls_seen=267
+  A3_temp_mixture_cts              max_calls_seen=268
+  C3_dipper_cts                    max_calls_seen=283
+  B3_regret_loss_cts               max_calls_seen=279
+  C1_debate_cts                    max_calls_seen=280
+  cts_baseline                     max_calls_seen=0
+  C2_devils_advocate_cts           max_calls_seen=282
+  G1_llm_mcts_cts                  max_calls_seen=293
+  WARM_warm_start_cts              max_calls_seen=297
+  F1_info_optimal_cts              max_calls_seen=289
+  E1_autoelicit_cts                max_calls_seen=286
+  E3_conformal_cts                 max_calls_seen=288
+  D2_causal_graph_cts              max_calls_seen=285
+  D1_semantic_cluster_cts          max_calls_seen=284

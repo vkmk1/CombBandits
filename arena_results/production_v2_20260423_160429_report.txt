@@ -1,0 +1,73 @@
+================================================================================
+PRODUCTION V2: CTS-WARMUP vs ROUND-ROBIN COMPARISON
+================================================================================
+Configs: 2 | Seeds: 2 | Agents: 12 | T: 200
+All configs: d=30, m=5
+Model: us.anthropic.claude-haiku-4-5-20251001-v1:0
+
+--- OVERALL RANKING (mean ± stderr, 95% CI) ---
+  cts                                 96.7 ±   8.1  [   80.9,   112.6]  median=100.2 [BASELINE]
+  kwik_query_rr                       99.9 ±   8.2  [   83.9,   115.9]  median=97.8 [RR-WARM]
+  cts_warm_eoe                       103.3 ±   2.3  [   98.8,   107.8]  median=102.9 [CTS-WARM]
+  pool_cts_rr                        106.4 ±  31.3  [   45.0,   167.7]  median=85.3 [RR-WARM]
+  warm_start_cts                     112.0 ±   4.3  [  103.5,   120.4]  median=113.5 [RR-WARM]
+  cts_warm_pool                      112.3 ±  18.7  [   75.7,   148.9]  median=114.4 [CTS-WARM]
+  cts_warm_kwik                      113.5 ±  11.6  [   90.8,   136.2]  median=122.3 [CTS-WARM]
+  warm_pool_rr                       120.0 ±   7.5  [  105.2,   134.7]  median=124.1 [RR-WARM]
+  cts_warm_adaptive                  124.9 ±  24.2  [   77.5,   172.3]  median=112.8 [CTS-WARM]
+  adaptive_abstain_rr                127.1 ±  28.3  [   71.7,   182.5]  median=107.6 [RR-WARM]
+  eoe_adaptive_rr                    132.8 ±  14.5  [  104.5,   161.2]  median=137.0 [RR-WARM]
+  cucb                               191.3 ±   9.5  [  172.8,   209.9]  median=184.8 [BASELINE]
+
+--- UNIFORM (n=2 configs) ---
+  cts                                 96.7 ±   8.1
+  kwik_query_rr                       99.9 ±   8.2
+  cts_warm_eoe                       103.3 ±   2.3
+  pool_cts_rr                        106.4 ±  31.3
+  warm_start_cts                     112.0 ±   4.3
+  cts_warm_pool                      112.3 ±  18.7
+  cts_warm_kwik                      113.5 ±  11.6
+  warm_pool_rr                       120.0 ±   7.5
+  cts_warm_adaptive                  124.9 ±  24.2
+  adaptive_abstain_rr                127.1 ±  28.3
+  eoe_adaptive_rr                    132.8 ±  14.5
+  cucb                               191.3 ±   9.5
+
+--- WIN RATE ---
+  pool_cts_rr                   :    2/4 (50.0%)
+  cts                           :    1/4 (25.0%)
+  adaptive_abstain_rr           :    1/4 (25.0%)
+
+--- ORACLE EFFICIENCY ---
+  agent                           queries   tokens  overlap  perfect
+  kwik_query_rr                        19    10214     3.64    0.150
+  cts_warm_kwik                        19    10189     3.41    0.150 *
+  cts_warm_eoe                         10     5366     3.32    0.000 *
+  adaptive_abstain_rr                  15     8812     2.65    0.000
+  eoe_adaptive_rr                      10     5839     2.58    0.020
+  cts_warm_adaptive                    10     5550     2.40    0.000 *
+  warm_pool_rr                         10     5840     2.40    0.080
+  cts_warm_pool                        10     5472     2.38    0.000 *
+  pool_cts_rr                          10     6242     1.25    0.000
+  warm_start_cts                        1      626     1.25    0.000
+
+--- WORST CASE ---
+  cts_warm_eoe                    109.2
+  cts                             112.4
+  warm_start_cts                  120.2
+  kwik_query_rr                   120.7
+  cts_warm_kwik                   130.1
+  warm_pool_rr                    133.3
+  cts_warm_pool                   149.7
+  eoe_adaptive_rr                 158.7
+  cts_warm_adaptive               192.5
+  pool_cts_rr                     196.1
+  adaptive_abstain_rr             208.7
+  cucb                            219.0
+
+--- HEAD-TO-HEAD: CTS-WARMUP vs ROUND-ROBIN ---
+  Pool-CTS                   CTS=112.3  RR=120.0  improvement=6.4%
+  Pool-CTS (no warmup)       CTS=112.3  RR=106.4  improvement=-5.5%
+  Adaptive+Abstain           CTS=124.9  RR=127.1  improvement=1.7%
+  KWIK Query                 CTS=113.5  RR=99.9  improvement=-13.6%
+  EOE Adaptive               CTS=103.3  RR=132.8  improvement=22.2%
