@@ -1,0 +1,133 @@
+================================================================================
+RANDOMIZED ARENA RESULTS
+================================================================================
+Total configs: 3
+Total agent-config pairs: 42
+
+--- OVERALL RANKING (lower = better) ---
+                     mean  median    std
+agent                                   
+pool_cts            464.6   325.8  331.1
+pool_ts_expand      539.6   470.6  193.6
+pool_cts_ic         639.8   718.5  158.0
+warm_start_cts      706.5   683.6  119.7
+oracle_eps_greedy   710.3   605.7  316.1
+decaying_prior_ts   746.4   693.6  155.4
+cts                 749.0   689.3  161.6
+pool_cts_cg         761.1   786.6  148.5
+freq_weighted_ts    762.5   738.9  142.4
+succ_elim_pool      799.1   780.3  316.8
+corral              800.2   716.1  239.0
+hedge_ts_hybrid     840.9   764.2  208.4
+llm_cucb_at        1394.4  1230.6  322.5
+cucb               1457.8  1375.3  295.5
+
+--- CONSISTENT_WRONG (n=1 configs) ---
+                     mean  median
+agent                            
+warm_start_cts      683.6   683.6
+cts                 689.3   689.3
+decaying_prior_ts   693.6   693.6
+pool_cts_ic         718.5   718.5
+freq_weighted_ts    738.9   738.9
+pool_ts_expand      758.2   758.2
+pool_cts_cg         786.6   786.6
+pool_cts            842.5   842.5
+oracle_eps_greedy  1065.4  1065.4
+corral             1069.9  1069.9
+hedge_ts_hybrid    1076.8  1076.8
+succ_elim_pool     1124.8  1124.8
+llm_cucb_at        1186.7  1186.7
+cucb               1375.3  1375.3
+
+--- PARTIAL_OVERLAP (n=1 configs) ---
+                     mean  median
+agent                            
+pool_cts            225.6   225.6
+pool_ts_expand      390.0   390.0
+pool_cts_ic         457.9   457.9
+oracle_eps_greedy   459.7   459.7
+succ_elim_pool      492.1   492.1
+warm_start_cts      599.8   599.8
+pool_cts_cg         601.5   601.5
+corral              614.6   614.6
+decaying_prior_ts   624.3   624.3
+cts                 625.8   625.8
+freq_weighted_ts    633.4   633.4
+hedge_ts_hybrid     681.8   681.8
+cucb               1212.3  1212.3
+llm_cucb_at        1230.6  1230.6
+
+--- ADVERSARIAL (n=1 configs) ---
+                     mean  median
+agent                            
+pool_cts            325.8   325.8
+pool_ts_expand      470.6   470.6
+oracle_eps_greedy   605.7   605.7
+corral              716.1   716.1
+pool_cts_ic         743.0   743.0
+hedge_ts_hybrid     764.2   764.2
+succ_elim_pool      780.3   780.3
+warm_start_cts      835.9   835.9
+pool_cts_cg         895.3   895.3
+freq_weighted_ts    915.2   915.2
+decaying_prior_ts   921.3   921.3
+cts                 932.0   932.0
+llm_cucb_at        1765.9  1765.9
+cucb               1785.7  1785.7
+
+--- WIN RATE (fraction of configs where agent has lowest regret) ---
+  pool_cts                 :   2/3 (66.7%)
+  warm_start_cts           :   1/3 (33.3%)
+
+--- NORMALIZED REGRET (relative to CUCB, lower = better) ---
+                    mean  median
+agent                           
+pool_cts           0.327   0.186
+pool_ts_expand     0.379   0.322
+pool_cts_ic        0.439   0.416
+warm_start_cts     0.487   0.495
+oracle_eps_greedy  0.498   0.379
+decaying_prior_ts  0.512   0.515
+cts                0.513   0.516
+pool_cts_cg        0.523   0.501
+freq_weighted_ts   0.524   0.522
+succ_elim_pool     0.554   0.437
+corral             0.562   0.507
+hedge_ts_hybrid    0.591   0.562
+llm_cucb_at        0.956   0.989
+cucb               1.000   1.000
+
+--- WORST CASE (max regret across all configs) ---
+agent
+pool_cts_ic           743.024719
+pool_ts_expand        758.220825
+warm_start_cts        835.928894
+pool_cts              842.502563
+pool_cts_cg           895.255493
+freq_weighted_ts      915.211609
+decaying_prior_ts     921.317749
+cts                   931.980835
+oracle_eps_greedy    1065.427490
+corral               1069.906494
+hedge_ts_hybrid      1076.802490
+succ_elim_pool       1124.846191
+llm_cucb_at          1765.869873
+cucb                 1785.708740
+
+--- AVERAGE RUNTIME PER CONFIG (seconds) ---
+agent
+cucb                 0.05
+succ_elim_pool       0.06
+oracle_eps_greedy    0.06
+freq_weighted_ts     0.11
+warm_start_cts       0.12
+pool_cts             0.12
+pool_ts_expand       0.12
+cts                  0.12
+decaying_prior_ts    0.12
+pool_cts_ic          0.13
+pool_cts_cg          0.14
+hedge_ts_hybrid      0.17
+llm_cucb_at          0.20
+corral               0.33

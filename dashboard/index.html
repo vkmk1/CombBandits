@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CombBandits Arena Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #131722;
+    --panel-2: #1a2030;
+    --border: #2a3142;
+    --text: #e6edf3;
+    --muted: #8b93a7;
+    --accent: #7aa2f7;
+    --accent-2: #bb9af7;
+    --good: #9ece6a;
+    --warn: #e0af68;
+    --bad: #f7768e;
+    --grid: #2a3142;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.5;
+    font-feature-settings: "tnum" 1;
+  }
+  header {
+    padding: 32px 48px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #131722 0%, #0b0d12 100%);
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .controls {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 18px 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    align-items: center;
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  select, button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  select:hover, button:hover { border-color: var(--accent); }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    padding: 24px 48px 0;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .stat-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 18px;
+    padding: 24px 48px 48px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .span-12 { grid-column: span 12; }
+  .span-8 { grid-column: span 8; }
+  .span-6 { grid-column: span 6; }
+  .span-4 { grid-column: span 4; }
+  @media (max-width: 1100px) {
+    .span-8, .span-6, .span-4 { grid-column: span 12; }
+  }
+  .chart-wrap { position: relative; height: 360px; }
+  .chart-wrap.tall { height: 480px; }
+  .chart-wrap.short { height: 280px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    padding: 7px 10px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+  th:first-child, td:first-child { text-align: left; }
+  th {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:hover td { background: var(--panel-2); }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .pill-good { background: rgba(158, 206, 106, 0.15); color: var(--good); }
+  .pill-warn { background: rgba(224, 175, 104, 0.15); color: var(--warn); }
+  .pill-bad { background: rgba(247, 118, 142, 0.15); color: var(--bad); }
+  .table-wrap { max-height: 460px; overflow-y: auto; }
+  footer {
+    padding: 24px 48px 40px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LLM-Guided Combinatorial Bandits — Arena Dashboard</h1>
+  <div class="sub">Randomized test arena results for ICML workshop submission. <span id="run-meta"></span></div>
+</header>
+
+<div class="controls">
+  <div class="control-group">
+    <label for="run-select">Run</label>
+    <select id="run-select"></select>
+  </div>
+  <div class="control-group">
+    <label for="metric-select">Sort by</label>
+    <select id="metric-select">
+      <option value="mean">Mean regret</option>
+      <option value="median">Median regret</option>
+      <option value="worst">Worst case</option>
+      <option value="winrate">Win rate</option>
+      <option value="normalized">Normalized vs CUCB</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label for="topk">Show top</label>
+    <select id="topk">
+      <option value="10">10</option>
+      <option value="15" selected>15</option>
+      <option value="100">All</option>
+    </select>
+  </div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="grid">
+
+  <div class="card span-8">
+    <div class="card-title">Overall ranking — Mean regret across all configs</div>
+    <div class="card-desc">Lower is better. Bars show mean ± std across the random configs.</div>
+    <div class="chart-wrap tall"><canvas id="ch-overall"></canvas></div>
+  </div>
+
+  <div class="card span-4">
+    <div class="card-title">Win rate</div>
+    <div class="card-desc">Fraction of configs each algorithm wins outright.</div>
+    <div class="chart-wrap tall"><canvas id="ch-winrate"></canvas></div>
+  </div>
+
+  <div class="card span-6">
+    <div class="card-title">Performance by corruption type</div>
+    <div class="card-desc">Mean regret, faceted across the four oracle corruption modes.</div>
+    <div class="chart-wrap tall"><canvas id="ch-corruption"></canvas></div>
+  </div>
+
+  <div class="card span-6">
+    <div class="card-title">Robustness vs efficiency</div>
+    <div class="card-desc">Worst-case regret vs mean regret. Pareto frontier in the bottom-left corner.</div>
+    <div class="chart-wrap tall"><canvas id="ch-pareto"></canvas></div>
+  </div>
+
+  <div class="card span-6">
+    <div class="card-title">Normalized regret (vs CUCB)</div>
+    <div class="card-desc">Per-config regret divided by CUCB's regret on the same config.</div>
+    <div class="chart-wrap"><canvas id="ch-normalized"></canvas></div>
+  </div>
+
+  <div class="card span-6">
+    <div class="card-title">Speed vs quality</div>
+    <div class="card-desc">Average runtime per config vs mean regret.</div>
+    <div class="chart-wrap"><canvas id="ch-speed"></canvas></div>
+  </div>
+
+  <div class="card span-12">
+    <div class="card-title">Full leaderboard</div>
+    <div class="card-desc">Click a column header to focus the metric. Highlighted rows are on the Pareto frontier.</div>
+    <div class="table-wrap">
+      <table id="leaderboard">
+        <thead>
+          <tr>
+            <th>Algorithm</th>
+            <th>Mean</th>
+            <th>Median</th>
+            <th>Std</th>
+            <th>Worst</th>
+            <th>Wins</th>
+            <th>Norm vs CUCB</th>
+            <th>Adversarial</th>
+            <th>Cons. wrong</th>
+            <th>Partial</th>
+            <th>Uniform</th>
+            <th>Runtime (s)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Generated from <a href="https://github.com/vkmk1/CombBandits">vkmk1/CombBandits</a>.
+  Raw data lives in <code>arena_results/</code>.
+</footer>
+
+<script src="data.js"></script>
+<script>
+// ===== Color palette assigned per agent (stable across charts) =====
+const PALETTE = [
+  "#7aa2f7","#bb9af7","#9ece6a","#e0af68","#f7768e","#7dcfff",
+  "#73daca","#ff9e64","#c0caf5","#a9b1d6","#cfc9c2","#9aa5ce",
+  "#ff007c","#3d59a1","#41a6b5","#7c8b9d","#d19a66","#56b6c2",
+  "#e06c75","#98c379","#61afef","#c678dd","#abb2bf","#5c6370",
+  "#d4a017","#1f9ede","#df6f81","#7f4dd6"
+];
+const colorFor = (() => {
+  const map = new Map();
+  return (name) => {
+    if (!map.has(name)) map.set(name, PALETTE[map.size % PALETTE.length]);
+    return map.get(name);
+  };
+})();
+
+// ===== Aggregate arena data =====
+function aggregate(records) {
+  const byAgent = new Map();
+  for (const r of records) {
+    if (!byAgent.has(r.agent)) byAgent.set(r.agent, []);
+    byAgent.get(r.agent).push(r);
+  }
+
+  // CUCB lookup for normalization
+  const cucbByConfig = new Map();
+  for (const r of records) {
+    if (r.agent === "cucb") cucbByConfig.set(r.config_id, r.regret_mean);
+  }
+
+  // Win counts per config
+  const byConfig = new Map();
+  for (const r of records) {
+    if (!byConfig.has(r.config_id)) byConfig.set(r.config_id, []);
+    byConfig.get(r.config_id).push(r);
+  }
+  const wins = new Map();
+  for (const [, arr] of byConfig) {
+    arr.sort((a,b) => a.regret_mean - b.regret_mean);
+    wins.set(arr[0].agent, (wins.get(arr[0].agent) || 0) + 1);
+  }
+  const totalConfigs = byConfig.size;
+
+  const summary = [];
+  for (const [agent, rows] of byAgent) {
+    const m = rows.map(r => r.regret_mean);
+    const med = rows.map(r => r.regret_median);
+    const mean = m.reduce((a,b) => a+b, 0) / m.length;
+    const sortedM = [...m].sort((a,b) => a-b);
+    const median = sortedM[Math.floor(sortedM.length/2)];
+    const std = Math.sqrt(m.reduce((a,b) => a + (b-mean)**2, 0) / m.length);
+    const worst = Math.max(...m);
+
+    const norms = rows.map(r => {
+      const c = cucbByConfig.get(r.config_id);
+      return c && c > 1 ? r.regret_mean / c : null;
+    }).filter(v => v !== null);
+    const normMean = norms.length ? norms.reduce((a,b) => a+b, 0) / norms.length : null;
+
+    const byCorr = {};
+    for (const ct of ["adversarial","consistent_wrong","partial_overlap","uniform"]) {
+      const sub = rows.filter(r => r.corruption_type === ct).map(r => r.regret_mean);
+      byCorr[ct] = sub.length ? sub.reduce((a,b) => a+b, 0) / sub.length : null;
+    }
+
+    const runtime = rows.reduce((a,r) => a + r.elapsed_sec, 0) / rows.length;
+
+    summary.push({
+      agent, mean, median, std, worst,
+      wins: wins.get(agent) || 0,
+      winRate: (wins.get(agent) || 0) / totalConfigs,
+      normalized: normMean,
+      byCorruption: byCorr,
+      runtime,
+      n: rows.length
+    });
+  }
+  return { summary, totalConfigs, totalRecords: records.length };
+}
+
+// ===== Pareto frontier (mean regret, worst case): minimize both =====
+function paretoFrontier(summary) {
+  const set = new Set();
+  for (const a of summary) {
+    let dominated = false;
+    for (const b of summary) {
+      if (a === b) continue;
+      if (b.mean <= a.mean && b.worst <= a.worst && (b.mean < a.mean || b.worst < a.worst)) {
+        dominated = true; break;
+      }
+    }
+    if (!dominated) set.add(a.agent);
+  }
+  return set;
+}
+
+// ===== Chart instances (so we can destroy on switch) =====
+let charts = {};
+function destroyAll() { for (const k in charts) { charts[k].destroy(); } charts = {}; }
+
+const COMMON = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: "#e6edf3", font: { size: 11 } } },
+    tooltip: {
+      backgroundColor: "#1a2030",
+      borderColor: "#2a3142",
+      borderWidth: 1,
+      titleColor: "#e6edf3",
+      bodyColor: "#e6edf3",
+      padding: 10,
+      cornerRadius: 6
+    }
+  },
+  scales: {
+    x: { ticks: { color: "#8b93a7", font: { size: 10 } }, grid: { color: "#2a3142" } },
+    y: { ticks: { color: "#8b93a7", font: { size: 10 } }, grid: { color: "#2a3142" } }
+  }
+};
+
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function renderOverall(summary, sortKey, topK) {
+  const sorted = [...summary].sort((a,b) => sortVal(a, sortKey) - sortVal(b, sortKey)).slice(0, topK);
+  const ctx = document.getElementById("ch-overall");
+  charts.overall = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(s => s.agent),
+      datasets: [{
+        label: "Mean regret",
+        data: sorted.map(s => s.mean),
+        backgroundColor: sorted.map(s => colorFor(s.agent)),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: Object.assign(clone(COMMON), {
+      indexAxis: "y",
+      plugins: Object.assign({}, COMMON.plugins, {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const s = sorted[ctx.dataIndex];
+              return [
+                `Mean: ${s.mean.toFixed(1)}`,
+                `Median: ${s.median.toFixed(1)}`,
+                `Std: ${s.std.toFixed(1)}`,
+                `Worst: ${s.worst.toFixed(1)}`,
+                `Wins: ${s.wins}/${s.n / 1}`
+              ];
+            }
+          }
+        }
+      }),
+      scales: {
+        x: { ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" } },
+        y: { ticks: { color: "#e6edf3", font: { size: 11 } }, grid: { display: false } }
+      }
+    })
+  });
+}
+
+function sortVal(s, key) {
+  if (key === "mean") return s.mean;
+  if (key === "median") return s.median;
+  if (key === "worst") return s.worst;
+  if (key === "winrate") return -s.winRate;
+  if (key === "normalized") return s.normalized ?? Infinity;
+  return s.mean;
+}
+
+function renderWinRate(summary) {
+  const filtered = summary.filter(s => s.wins > 0).sort((a,b) => b.wins - a.wins);
+  const ctx = document.getElementById("ch-winrate");
+  charts.winrate = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: filtered.map(s => `${s.agent} (${s.wins})`),
+      datasets: [{
+        data: filtered.map(s => s.wins),
+        backgroundColor: filtered.map(s => colorFor(s.agent)),
+        borderColor: "#0b0d12",
+        borderWidth: 2
+      }]
+    },
+    options: Object.assign(clone(COMMON), {
+      cutout: "55%",
+      scales: {},
+      plugins: {
+        legend: { position: "right", labels: { color: "#e6edf3", font: { size: 11 }, boxWidth: 12 } },
+        tooltip: COMMON.plugins.tooltip
+      }
+    })
+  });
+}
+
+function renderCorruption(summary, topK) {
+  const corruptions = ["adversarial","consistent_wrong","partial_overlap","uniform"];
+  // Pick top algorithms by mean
+  const topAgents = [...summary].sort((a,b) => a.mean - b.mean).slice(0, topK).map(s => s.agent);
+  const datasets = corruptions.map((ct, i) => ({
+    label: ct.replace(/_/g, " "),
+    data: topAgents.map(a => {
+      const s = summary.find(x => x.agent === a);
+      return s.byCorruption[ct];
+    }),
+    backgroundColor: ["#7aa2f7","#f7768e","#e0af68","#9ece6a"][i],
+    borderRadius: 3
+  }));
+  const ctx = document.getElementById("ch-corruption");
+  charts.corruption = new Chart(ctx, {
+    type: "bar",
+    data: { labels: topAgents, datasets },
+    options: Object.assign(clone(COMMON), {
+      scales: {
+        x: { ticks: { color: "#8b93a7", maxRotation: 60, minRotation: 45, font: { size: 10 } }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" }, title: { display: true, text: "Mean regret", color: "#8b93a7", font: { size: 11 } } }
+      }
+    })
+  });
+}
+
+function renderPareto(summary) {
+  const front = paretoFrontier(summary);
+  const ctx = document.getElementById("ch-pareto");
+  charts.pareto = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: summary.map(s => ({
+        label: s.agent,
+        data: [{ x: s.mean, y: s.worst }],
+        backgroundColor: colorFor(s.agent),
+        borderColor: front.has(s.agent) ? "#9ece6a" : "transparent",
+        borderWidth: front.has(s.agent) ? 2 : 0,
+        pointRadius: front.has(s.agent) ? 8 : 6,
+        pointHoverRadius: 10
+      }))
+    },
+    options: Object.assign(clone(COMMON), {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: mean=${ctx.parsed.x.toFixed(0)}, worst=${ctx.parsed.y.toFixed(0)}`
+          },
+          backgroundColor: "#1a2030",
+          borderColor: "#2a3142",
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: { ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" }, title: { display: true, text: "Mean regret →", color: "#8b93a7" } },
+        y: { ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" }, title: { display: true, text: "Worst case →", color: "#8b93a7" } }
+      }
+    })
+  });
+}
+
+function renderNormalized(summary, topK) {
+  const sorted = summary.filter(s => s.normalized !== null && s.agent !== "cucb")
+    .sort((a,b) => a.normalized - b.normalized).slice(0, topK);
+  const ctx = document.getElementById("ch-normalized");
+  charts.normalized = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(s => s.agent),
+      datasets: [{
+        label: "Regret / CUCB regret",
+        data: sorted.map(s => s.normalized),
+        backgroundColor: sorted.map(s => s.normalized < 0.5 ? "#9ece6a" : s.normalized < 0.8 ? "#e0af68" : "#f7768e"),
+        borderRadius: 4
+      }]
+    },
+    options: Object.assign(clone(COMMON), {
+      plugins: { legend: { display: false }, tooltip: COMMON.plugins.tooltip },
+      scales: {
+        x: { ticks: { color: "#8b93a7", maxRotation: 60, minRotation: 45, font: { size: 10 } }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" } }
+      }
+    })
+  });
+}
+
+function renderSpeed(summary) {
+  const ctx = document.getElementById("ch-speed");
+  charts.speed = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: summary.map(s => ({
+        label: s.agent,
+        data: [{ x: s.runtime, y: s.mean }],
+        backgroundColor: colorFor(s.agent),
+        pointRadius: 7,
+        pointHoverRadius: 10
+      }))
+    },
+    options: Object.assign(clone(COMMON), {
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(2)}s, regret=${ctx.parsed.y.toFixed(0)}` } }
+      },
+      scales: {
+        x: { ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" }, title: { display: true, text: "Runtime per config (s)", color: "#8b93a7" } },
+        y: { ticks: { color: "#8b93a7" }, grid: { color: "#2a3142" }, title: { display: true, text: "Mean regret", color: "#8b93a7" } }
+      }
+    })
+  });
+}
+
+function renderTable(summary) {
+  const sorted = [...summary].sort((a,b) => a.mean - b.mean);
+  const front = paretoFrontier(summary);
+  const tbody = document.querySelector("#leaderboard tbody");
+  tbody.innerHTML = "";
+  for (const s of sorted) {
+    const tr = document.createElement("tr");
+    if (front.has(s.agent)) tr.style.background = "rgba(158, 206, 106, 0.06)";
+    const norm = s.normalized !== null ? s.normalized.toFixed(3) : "—";
+    const cells = [
+      `<strong style="color:${colorFor(s.agent)}">${s.agent}</strong>${front.has(s.agent) ? ' <span class="pill pill-good">Pareto</span>' : ''}`,
+      s.mean.toFixed(1),
+      s.median.toFixed(1),
+      s.std.toFixed(1),
+      s.worst.toFixed(0),
+      `${s.wins}`,
+      norm,
+      s.byCorruption.adversarial !== null ? s.byCorruption.adversarial.toFixed(0) : "—",
+      s.byCorruption.consistent_wrong !== null ? s.byCorruption.consistent_wrong.toFixed(0) : "—",
+      s.byCorruption.partial_overlap !== null ? s.byCorruption.partial_overlap.toFixed(0) : "—",
+      s.byCorruption.uniform !== null ? s.byCorruption.uniform.toFixed(0) : "—",
+      s.runtime.toFixed(2)
+    ];
+    tr.innerHTML = cells.map((c, i) => `<td>${c}</td>`).join("");
+    tbody.appendChild(tr);
+  }
+}
+
+function renderStats(summary, totalConfigs, totalRecords) {
+  const best = [...summary].sort((a,b) => a.mean - b.mean)[0];
+  const winsBest = [...summary].sort((a,b) => b.wins - a.wins)[0];
+  const robustBest = [...summary].sort((a,b) => a.worst - b.worst)[0];
+  const cwBest = [...summary].filter(s => s.byCorruption.consistent_wrong !== null)
+    .sort((a,b) => a.byCorruption.consistent_wrong - b.byCorruption.consistent_wrong)[0];
+
+  const stats = document.getElementById("stats");
+  stats.innerHTML = `
+    <div class="stat"><div class="stat-label">Configs</div><div class="stat-value">${totalConfigs}</div><div class="stat-sub">${totalRecords} agent-config pairs</div></div>
+    <div class="stat"><div class="stat-label">Algorithms</div><div class="stat-value">${summary.length}</div><div class="stat-sub">tested in this run</div></div>
+    <div class="stat"><div class="stat-label">Best mean</div><div class="stat-value">${best.agent}</div><div class="stat-sub">${best.mean.toFixed(1)} regret</div></div>
+    <div class="stat"><div class="stat-label">Top win rate</div><div class="stat-value">${winsBest.agent}</div><div class="stat-sub">${winsBest.wins}/${totalConfigs} wins (${(winsBest.winRate*100).toFixed(0)}%)</div></div>
+    <div class="stat"><div class="stat-label">Best robust</div><div class="stat-value">${robustBest.agent}</div><div class="stat-sub">worst ${robustBest.worst.toFixed(0)}</div></div>
+    <div class="stat"><div class="stat-label">Best on consistent_wrong</div><div class="stat-value">${cwBest.agent}</div><div class="stat-sub">${cwBest.byCorruption.consistent_wrong.toFixed(0)} regret</div></div>
+  `;
+}
+
+function renderAll(records) {
+  destroyAll();
+  const sortKey = document.getElementById("metric-select").value;
+  const topK = parseInt(document.getElementById("topk").value, 10);
+  const { summary, totalConfigs, totalRecords } = aggregate(records);
+  renderStats(summary, totalConfigs, totalRecords);
+  renderOverall(summary, sortKey, topK);
+  renderWinRate(summary);
+  renderCorruption(summary, Math.min(topK, 12));
+  renderPareto(summary);
+  renderNormalized(summary, topK);
+  renderSpeed(summary);
+  renderTable(summary);
+}
+
+// ===== Init =====
+function init() {
+  Chart.defaults.color = "#e6edf3";
+  Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif';
+
+  const runs = window.ARENA_RUNS || [];
+  if (!runs.length) {
+    document.body.innerHTML = '<div style="padding:48px">No data — load arena_results JSON files into data.js.</div>';
+    return;
+  }
+
+  const sel = document.getElementById("run-select");
+  for (const r of runs) {
+    const opt = document.createElement("option");
+    opt.value = r.id;
+    opt.textContent = `${r.id} (${r.n_records} pairs)`;
+    sel.appendChild(opt);
+  }
+  sel.value = runs[runs.length - 1].id;
+  document.getElementById("run-meta").textContent =
+    `Latest run: ${runs[runs.length - 1].id} · ${runs[runs.length - 1].n_records} agent-config pairs`;
+
+  function refresh() {
+    const r = runs.find(x => x.id === sel.value);
+    document.getElementById("run-meta").textContent =
+      `Selected run: ${r.id} · ${r.n_records} agent-config pairs`;
+    renderAll(r.data);
+  }
+
+  sel.addEventListener("change", refresh);
+  document.getElementById("metric-select").addEventListener("change", refresh);
+  document.getElementById("topk").addEventListener("change", refresh);
+
+  refresh();
+}
+
+init();
+</script>
+
+</body>
+</html>
