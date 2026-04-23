@@ -42,6 +42,10 @@ from arena_novel_algos_v2 import (
 from arena_novel_algos_v3 import (
     PoolCTSDualDoubling, FreqPoolCTSDual, PoolCTSAdaptiveDoubling,
 )
+from arena_novel_algos_v4 import (
+    MetaPoolCTS, AdaptivePoolCTS, LUCBPool, OracleBudgetCTS,
+    MultiOraclePool, ConsistencyRobustCTS, PoolCTSAbstain, ParetoMetaDual,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -239,6 +243,16 @@ def build_agent_factories() -> dict[str, callable]:
     factories["pool_cts_dual_doubling"] = lambda d, m, n_seeds, device, oracle: PoolCTSDualDoubling(d, m, n_seeds, device, oracle)
     factories["freq_pool_cts_dual"] = lambda d, m, n_seeds, device, oracle: FreqPoolCTSDual(d, m, n_seeds, device, oracle)
     factories["pool_cts_adapt_doubling"] = lambda d, m, n_seeds, device, oracle: PoolCTSAdaptiveDoubling(d, m, n_seeds, device, oracle)
+
+    # --- Novel algorithms (Loop 3 — research directions) ---
+    factories["meta_pool_cts"] = lambda d, m, n_seeds, device, oracle: MetaPoolCTS(d, m, n_seeds, device, oracle)
+    factories["adaptive_pool_cts"] = lambda d, m, n_seeds, device, oracle: AdaptivePoolCTS(d, m, n_seeds, device, oracle)
+    factories["lucb_pool"] = lambda d, m, n_seeds, device, oracle: LUCBPool(d, m, n_seeds, device, oracle)
+    factories["oracle_budget_cts"] = lambda d, m, n_seeds, device, oracle: OracleBudgetCTS(d, m, n_seeds, device, oracle)
+    factories["multi_oracle_pool"] = lambda d, m, n_seeds, device, oracle: MultiOraclePool(d, m, n_seeds, device, oracle)
+    factories["consistency_robust_cts"] = lambda d, m, n_seeds, device, oracle: ConsistencyRobustCTS(d, m, n_seeds, device, oracle)
+    factories["pool_cts_abstain"] = lambda d, m, n_seeds, device, oracle: PoolCTSAbstain(d, m, n_seeds, device, oracle)
+    factories["pareto_meta_dual"] = lambda d, m, n_seeds, device, oracle: ParetoMetaDual(d, m, n_seeds, device, oracle)
 
     return factories
 
