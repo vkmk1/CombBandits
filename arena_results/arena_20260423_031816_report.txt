@@ -1,0 +1,276 @@
+================================================================================
+RANDOMIZED ARENA RESULTS
+================================================================================
+Total configs: 30
+Total agent-config pairs: 870
+
+--- OVERALL RANKING (lower = better) ---
+                           mean  median     std
+agent                                          
+pool_cts_doubling         628.9   438.5   610.2
+pool_cts_ic               643.5   505.9   459.9
+oracle_budget_cts         653.9   361.5   911.6
+pool_cts_abstain          659.3   560.2   460.5
+pool_cts_adapt_doubling   670.5   464.3   695.7
+multi_oracle_pool         671.1   306.5  1070.5
+warm_start_cts            672.6   516.0   427.8
+freq_pool_ts              673.4   305.1  1073.7
+pool_cts_safety           685.2   316.4  1095.9
+pool_cts                  687.1   317.4  1102.4
+pareto_meta_dual          692.1   492.7   568.0
+freq_pool_cts_dual        704.4   536.3   483.5
+pool_cts_dual_doubling    716.4   400.6   959.1
+pool_cts_dual             722.4   512.4   512.8
+pool_cts_cg               725.1   612.5   439.8
+adaptive_pool_cts         739.3   225.0  1489.6
+freq_weighted_ts          763.0   655.7   482.6
+pool_ts_expand            763.5   641.6   546.4
+decaying_prior_ts         765.2   645.6   505.8
+meta_pool_cts             777.1   647.1   482.0
+cts                       780.5   652.3   508.9
+consistency_robust_cts    812.6   620.0   669.2
+lucb_pool                 853.2   766.7   672.8
+corral                    879.3   640.9   605.9
+succ_elim_pool           1115.3   784.4  1101.8
+oracle_eps_greedy        1210.9   939.1  1059.3
+hedge_ts_hybrid          1600.5  1555.3   903.7
+llm_cucb_at              1954.2  1473.1  1133.2
+cucb                     2068.3  1654.5  1197.9
+
+--- CONSISTENT_WRONG (n=9 configs) ---
+                           mean  median
+agent                                  
+freq_pool_cts_dual        545.5   376.4
+pool_cts_dual             547.4   372.0
+warm_start_cts            551.9   445.4
+decaying_prior_ts         592.7   441.9
+cts                       594.9   462.8
+freq_weighted_ts          607.8   496.7
+pool_cts_ic               644.5   506.9
+pool_cts_cg               691.8   491.7
+meta_pool_cts             917.9   635.5
+pool_cts_abstain          935.2   914.2
+pool_ts_expand            989.5   497.2
+pool_cts_doubling        1028.2   553.9
+corral                   1053.2   778.7
+pareto_meta_dual         1105.6   795.5
+consistency_robust_cts   1304.2   854.8
+pool_cts_adapt_doubling  1309.8   943.7
+oracle_budget_cts        1370.3   666.1
+lucb_pool                1379.2   960.3
+pool_cts_dual_doubling   1433.1   743.5
+hedge_ts_hybrid          1524.3  1117.0
+cucb                     1587.6  1254.9
+multi_oracle_pool        1619.7   891.6
+freq_pool_ts             1620.1   876.7
+pool_cts                 1636.2   888.4
+pool_cts_safety          1658.3   903.6
+llm_cucb_at              1774.1  1170.0
+oracle_eps_greedy        1895.0  1253.1
+succ_elim_pool           1924.9  1209.1
+adaptive_pool_cts        2049.8   860.8
+
+--- PARTIAL_OVERLAP (n=8 configs) ---
+                           mean  median
+agent                                  
+adaptive_pool_cts         177.1   188.6
+multi_oracle_pool         205.9   199.8
+pool_cts_safety           228.0   230.3
+pool_cts                  232.4   222.8
+freq_pool_ts              237.6   263.6
+oracle_budget_cts         299.5   275.1
+pool_cts_adapt_doubling   364.5   364.3
+pool_cts_dual_doubling    368.3   333.9
+pool_cts_doubling         417.7   405.5
+pool_cts_ic               422.3   440.4
+pareto_meta_dual          448.2   419.7
+pool_cts_abstain          467.8   510.1
+consistency_robust_cts    483.8   502.8
+freq_pool_cts_dual        526.2   463.2
+pool_cts_dual             534.2   488.9
+meta_pool_cts             536.2   547.1
+pool_ts_expand            545.3   568.2
+pool_cts_cg               553.8   578.2
+corral                    555.2   533.8
+warm_start_cts            557.8   551.8
+lucb_pool                 583.4   578.7
+decaying_prior_ts         618.8   614.8
+succ_elim_pool            622.4   513.6
+freq_weighted_ts          631.3   632.6
+cts                       663.8   692.5
+oracle_eps_greedy         716.8   649.4
+hedge_ts_hybrid          1456.6  1478.4
+cucb                     1810.0  1975.5
+llm_cucb_at              1823.3  1981.2
+
+--- ADVERSARIAL (n=9 configs) ---
+                           mean  median
+agent                                  
+adaptive_pool_cts         170.8   147.7
+freq_pool_ts              279.3   225.1
+pool_cts_safety           284.3   221.2
+multi_oracle_pool         298.7   258.2
+pool_cts                  299.4   260.2
+oracle_budget_cts         362.3   331.8
+pool_cts_adapt_doubling   370.9   341.3
+pool_cts_dual_doubling    397.1   324.1
+pool_cts_doubling         450.3   401.4
+pareto_meta_dual          515.8   407.5
+pool_cts_abstain          539.4   437.0
+lucb_pool                 632.6   488.8
+consistency_robust_cts    642.8   597.1
+pool_ts_expand            722.5   737.9
+pool_cts_ic               742.6   554.2
+meta_pool_cts             797.2   658.7
+warm_start_cts            801.1   729.5
+succ_elim_pool            819.0   579.7
+pool_cts_cg               827.8   717.0
+corral                    883.0   600.3
+freq_pool_cts_dual        904.7   601.4
+freq_weighted_ts          905.5   808.4
+cts                       930.7   845.1
+pool_cts_dual             936.1   544.1
+decaying_prior_ts         940.1   835.7
+oracle_eps_greedy         998.2   898.2
+hedge_ts_hybrid          1579.8  1546.4
+llm_cucb_at              2154.5  1359.8
+cucb                     2383.9  1904.9
+
+--- UNIFORM (n=4 configs) ---
+                           mean  median
+agent                                  
+adaptive_pool_cts         193.9   169.5
+freq_pool_ts              301.9   251.0
+multi_oracle_pool         304.8   236.9
+pool_cts_safety           312.4   265.9
+pool_cts                  333.0   307.0
+oracle_budget_cts         406.7   340.9
+pool_cts_adapt_doubling   518.0   446.6
+pool_cts_dual_doubling    518.9   451.5
+pool_cts_doubling         554.9   506.3
+pareto_meta_dual          646.2   591.2
+pool_cts_abstain          691.2   647.0
+lucb_pool                 705.9   691.0
+consistency_robust_cts    745.9   747.9
+pool_ts_expand            783.8   756.1
+pool_cts_ic               860.5   678.1
+warm_start_cts            884.9   866.7
+meta_pool_cts             897.0   858.8
+pool_cts_cg               911.5   900.0
+succ_elim_pool            946.3   845.0
+freq_pool_cts_dual        967.4  1004.0
+pool_cts_dual            1011.7  1038.9
+decaying_prior_ts        1052.8  1039.4
+freq_weighted_ts         1054.9  1034.7
+cts                      1093.7  1086.9
+corral                   1128.1  1247.5
+oracle_eps_greedy        1138.9  1137.8
+hedge_ts_hybrid          2106.6  1869.1
+llm_cucb_at              2170.5  2064.9
+cucb                     2956.4  3190.7
+
+--- WIN RATE (fraction of configs where agent has lowest regret) ---
+  adaptive_pool_cts        :  20/30 (66.7%)
+  pool_cts_dual            :   2/30 (6.7%)
+  warm_start_cts           :   2/30 (6.7%)
+  freq_pool_cts_dual       :   2/30 (6.7%)
+  multi_oracle_pool        :   2/30 (6.7%)
+  cts                      :   1/30 (3.3%)
+  pool_cts_doubling        :   1/30 (3.3%)
+
+--- NORMALIZED REGRET (relative to CUCB, lower = better) ---
+                          mean  median
+agent                                 
+freq_pool_cts_dual       0.344   0.308
+warm_start_cts           0.347   0.332
+pool_cts_ic              0.347   0.292
+pool_cts_dual            0.349   0.322
+pool_cts_doubling        0.358   0.244
+pool_cts_abstain         0.367   0.256
+oracle_budget_cts        0.378   0.192
+pool_cts_cg              0.379   0.322
+decaying_prior_ts        0.385   0.357
+pareto_meta_dual         0.385   0.266
+freq_weighted_ts         0.389   0.371
+cts                      0.393   0.369
+multi_oracle_pool        0.399   0.145
+freq_pool_ts             0.401   0.137
+pool_cts_dual_doubling   0.402   0.223
+pool_cts_adapt_doubling  0.404   0.224
+pool_cts                 0.406   0.146
+pool_ts_expand           0.409   0.323
+meta_pool_cts            0.410   0.327
+pool_cts_safety          0.411   0.151
+consistency_robust_cts   0.447   0.280
+corral                   0.467   0.413
+lucb_pool                0.470   0.301
+adaptive_pool_cts        0.472   0.111
+succ_elim_pool           0.626   0.446
+oracle_eps_greedy        0.662   0.467
+hedge_ts_hybrid          0.833   0.806
+cucb                     1.000   1.000
+llm_cucb_at              1.011   0.995
+
+--- WORST CASE (max regret across all configs) ---
+agent
+warm_start_cts             1618.234131
+freq_pool_cts_dual         1646.646484
+pool_cts_dual              1691.199829
+pool_cts_cg                1752.503296
+freq_weighted_ts           1858.182861
+pool_cts_ic                1868.864624
+meta_pool_cts              1937.793945
+cts                        1956.169312
+decaying_prior_ts          2020.565063
+corral                     2084.517334
+pool_cts_abstain           2435.495850
+pool_ts_expand             2723.157471
+pareto_meta_dual           2831.405273
+pool_cts_adapt_doubling    2991.184082
+consistency_robust_cts     3031.687012
+lucb_pool                  3177.543457
+pool_cts_doubling          3352.045410
+hedge_ts_hybrid            3667.700439
+cucb                       4193.944336
+llm_cucb_at                4361.483887
+oracle_budget_cts          4578.569336
+pool_cts_dual_doubling     4980.871582
+multi_oracle_pool          5154.721680
+freq_pool_ts               5242.028320
+pool_cts_safety            5261.871094
+oracle_eps_greedy          5295.057129
+pool_cts                   5379.468262
+succ_elim_pool             5714.887207
+adaptive_pool_cts          6302.062500
+
+--- AVERAGE RUNTIME PER CONFIG (seconds) ---
+agent
+cucb                       0.17
+succ_elim_pool             0.18
+oracle_eps_greedy          0.20
+freq_pool_ts               0.41
+cts                        0.42
+adaptive_pool_cts          0.42
+pool_cts                   0.42
+multi_oracle_pool          0.42
+pool_cts_dual_doubling     0.42
+freq_weighted_ts           0.43
+pool_ts_expand             0.43
+pool_cts_doubling          0.43
+oracle_budget_cts          0.43
+lucb_pool                  0.43
+warm_start_cts             0.43
+decaying_prior_ts          0.44
+freq_pool_cts_dual         0.45
+pool_cts_ic                0.46
+pool_cts_abstain           0.48
+pool_cts_adapt_doubling    0.48
+consistency_robust_cts     0.49
+pool_cts_cg                0.49
+pool_cts_dual              0.51
+pool_cts_safety            0.58
+hedge_ts_hybrid            0.59
+llm_cucb_at                0.64
+meta_pool_cts              0.75
+pareto_meta_dual           0.82
+corral                     1.16
