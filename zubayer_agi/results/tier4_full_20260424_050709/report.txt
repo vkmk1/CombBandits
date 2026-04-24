@@ -1,0 +1,60 @@
+====================================================================================================
+TIER 4 FULL-SCALE — 2480 trials | model=gpt-5.4
+====================================================================================================
+Algos: 8 | Configs: 16 | Seeds: 20 | T: 2500
+n per algo: 320
+
+--- GLOBAL RANKING ---
+rank algorithm                      mean  stderr   median    vs_CTS   vs_Rand
+1    N1_corr_full                  268.2    7.39    239.1    +18.9%    +12.7%
+2    PAPER_ts_llm                  279.5    7.87    256.0    +15.5%     +9.0%
+3    N5_corr_full_robust           282.6    9.18    251.3    +14.6%     +8.0%
+4    N4_robust_corr                284.2    8.66    261.6    +14.1%     +7.5%
+5    ABLATION_random_corr          307.2    8.13    288.2     +7.1%     +0.0%
+6    M2_corr_cts                   307.2    8.14    283.1     +7.1%     +0.0%
+7    CTS                           330.7    7.94    318.4     +0.0%     -7.6%
+8    CUCB                          776.3   14.33    657.5   -134.8%   -152.7%
+
+--- PAIRED vs CTS (Holm-Bonferroni, K=7 comparisons) ---
+  algorithm                   wins losses  mean_diff  t_stat   sign_p   holm_α  sig?
+  CUCB                           0    320     -445.6  -40.69   0.0000   0.0071      
+  N1_corr_full                 262     58       62.5   11.50   0.0000   0.0083    ★★
+  N5_corr_full_robust          236     83       48.1    7.28   0.0000   0.0100    ★★
+  N4_robust_corr               237     83       46.5    8.17   0.0000   0.0125    ★★
+  M2_corr_cts                  232     88       23.5    4.73   0.0000   0.0167    ★★
+  ABLATION_random_corr         227     93       23.5    4.72   0.0000   0.0250    ★★
+  PAPER_ts_llm                 143     97       10.4    2.71   0.0036   0.0500    ★★
+
+====================================================================================================
+CRITICAL: LLM necessity ablation — LLM algos vs RandomCorr
+====================================================================================================
+If LLM-family doesn't beat RandomCorr, LLM is decorative.
+
+  algo                        wins losses       diff        p    llm_contributes?
+  M2_corr_cts                  169    151       -0.0   0.3420                  NO
+  N1_corr_full                 228     92       39.0   0.0000               YES ★
+  N4_robust_corr               202    118       23.0   0.0000               YES ★
+  N5_corr_full_robust          207    113       24.6   0.0000               YES ★
+
+--- PER-(d, m) BREAKDOWN (mean regret) ---
+algorithm                   d=25,m=3  d=25,m=5  d=50,m=3  d=50,m=5
+N1_corr_full                   192.0     195.1     312.5     373.3
+PAPER_ts_llm                   214.1     219.8     393.3     543.8
+N5_corr_full_robust            178.0     222.1     333.5     396.7
+N4_robust_corr                 191.3     198.6     351.0     395.8
+ABLATION_random_corr           210.9     216.7     386.8     414.4
+M2_corr_cts                    208.8     219.2     375.6     425.2
+CTS                            224.5     223.8     415.7     458.8
+CUCB                           546.4     560.6     933.2    1065.2
+
+--- LLM COST (gpt-5.4) ---
+  Total tokens: 2,899,962  |  Est cost: ~$7.25
+  algo                         calls    tokens    hits
+  PAPER_ts_llm                  25.0     11253     0.0
+  M2_corr_cts                    1.0       623     0.0
+
+====================================================================================================
+PUBLICATION VERDICT
+====================================================================================================
+Algorithms beating CTS at p<0.05 (uncorrected): ['N1_corr_full', 'N5_corr_full_robust', 'N4_robust_corr', 'M2_corr_cts', 'ABLATION_random_corr', 'PAPER_ts_llm']
+Algorithms beating CTS at Holm-Bonferroni (corrected): ['N1_corr_full', 'N5_corr_full_robust', 'N4_robust_corr', 'M2_corr_cts', 'ABLATION_random_corr', 'PAPER_ts_llm']

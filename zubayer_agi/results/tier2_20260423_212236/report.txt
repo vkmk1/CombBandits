@@ -1,0 +1,124 @@
+====================================================================================================
+TIER 2 EXPERIMENT: Multi-Model Evaluation (gpt-4.1-mini + gpt-5-mini + gpt-5.4)
+====================================================================================================
+Total trials: 960
+Unique configs: 12
+Algorithms: 8
+Seeds per config: 10
+T: 2000
+
+--- MODEL: gpt-4.1-mini (40 trials/algo) ---
+rank algorithm                      mean  stderr   median    vs_CTS
+1    PAPER_ts_llm                  248.1   12.30    233.8     +3.5% <-- BEATS CTS
+2    cts_baseline                  257.2   12.93    240.8     +0.0%
+3    PAPER_jump_start              266.4   13.20    247.9     -3.6%
+4    OURS_M2_corr_cts              266.9   18.87    249.6     -3.8%
+5    weak_oracle_topm              277.9   12.78    269.7     -8.1%
+6    OURS_B2_icpd                  282.5   26.74    231.2     -9.8%
+7    PAPER_cal_gated               283.6   26.86    199.3    -10.3%
+8    PAPER_llm_cucb_at             503.7   41.07    479.0    -95.9%
+
+--- MODEL: gpt-5-mini (40 trials/algo) ---
+rank algorithm                      mean  stderr   median    vs_CTS
+1    OURS_M2_corr_cts              386.1   20.92    381.9    +12.9% <-- BEATS CTS
+2    PAPER_ts_llm                  415.7   12.54    410.5     +6.2% <-- BEATS CTS
+3    cts_baseline                  443.3   12.36    436.2     +0.0%
+4    PAPER_cal_gated               447.4   28.40    423.6     -0.9%
+5    weak_oracle_topm              450.4   12.52    452.5     -1.6%
+6    OURS_B2_icpd                  451.1   25.97    467.1     -1.8%
+7    PAPER_jump_start              453.4   12.09    440.2     -2.3%
+8    PAPER_llm_cucb_at             653.3   43.73    561.3    -47.4%
+
+--- MODEL: gpt-5.4 (40 trials/algo) ---
+rank algorithm                      mean  stderr   median    vs_CTS
+1    OURS_M2_corr_cts              333.8   20.41    294.1     +9.9% <-- BEATS CTS
+2    PAPER_cal_gated               337.2   20.40    317.8     +8.9% <-- BEATS CTS
+3    PAPER_ts_llm                  348.6   18.11    343.3     +5.9% <-- BEATS CTS
+4    OURS_B2_icpd                  351.2   23.53    343.9     +5.2% <-- BEATS CTS
+5    cts_baseline                  370.3   19.51    353.8     +0.0%
+6    weak_oracle_topm              397.7   18.39    395.5     -7.4%
+7    PAPER_jump_start              409.8   17.79    419.9    -10.7%
+8    PAPER_llm_cucb_at             505.7   32.49    485.8    -36.5%
+
+--- GLOBAL RANKING (all 3 models aggregated) ---
+1    OURS_M2_corr_cts              328.9   12.34    297.7     +7.9% <-- BEATS CTS
+2    PAPER_ts_llm                  337.5   10.46    338.9     +5.5% <-- BEATS CTS
+3    PAPER_cal_gated               356.1   15.86    339.9     +0.2% <-- BEATS CTS
+4    cts_baseline                  356.9   11.22    354.4     +0.0%
+5    OURS_B2_icpd                  361.6   15.89    368.2     -1.3%
+6    weak_oracle_topm              375.4   10.76    372.1     -5.2%
+7    PAPER_jump_start              376.5   11.10    390.4     -5.5%
+8    PAPER_llm_cucb_at             554.2   23.45    508.9    -55.3%
+
+--- PAIRED COMPARISON vs CTS (per model) ---
+
+  gpt-4.1-mini:
+  algorithm                   wins losses  mean_diff  stderr  t_stat   sign_p
+  OURS_M2_corr_cts              25     15       -9.7   15.87   -0.61   0.1539
+  PAPER_ts_llm                  24     16        9.1    6.76    1.34   0.2682
+  PAPER_cal_gated               27     13      -26.5   22.54   -1.17   0.0385
+  OURS_B2_icpd                  24     16      -25.3   25.50   -0.99   0.2682
+  weak_oracle_topm              13     27      -20.8    8.77   -2.37   0.0385
+  PAPER_jump_start              14     26       -9.3    8.98   -1.03   0.0807
+  PAPER_llm_cucb_at             10     30     -246.5   43.67   -5.64   0.0022
+
+  gpt-5-mini:
+  algorithm                   wins losses  mean_diff  stderr  t_stat   sign_p
+  OURS_M2_corr_cts              31      9       57.2   19.67    2.91   0.0007
+  PAPER_ts_llm                  32      8       27.6   13.21    2.09   0.0002
+  PAPER_cal_gated               24     16       -4.1   31.35   -0.13   0.2682
+  OURS_B2_icpd                  22     18       -7.8   28.96   -0.27   0.6358
+  weak_oracle_topm              16     24       -7.1   11.88   -0.60   0.2682
+  PAPER_jump_start              17     23      -10.1   12.47   -0.81   0.4296
+  PAPER_llm_cucb_at             11     29     -210.0   50.49   -4.16   0.0064
+
+  gpt-5.4:
+  algorithm                   wins losses  mean_diff  stderr  t_stat   sign_p
+  OURS_M2_corr_cts              27     13       36.6   12.62    2.90   0.0385
+  PAPER_ts_llm                  25     15       21.7    8.99    2.42   0.1539
+  PAPER_cal_gated               26     14       33.1   15.19    2.18   0.0807
+  OURS_B2_icpd                  24     16       19.1   17.71    1.08   0.2682
+  weak_oracle_topm              10     29      -27.4   10.49   -2.61   0.0022
+  PAPER_jump_start              14     26      -39.5   15.52   -2.54   0.0807
+  PAPER_llm_cucb_at             11     29     -135.3   33.80   -4.00   0.0064
+
+--- PER-CONFIG MEAN REGRET (all models) ---
+algorithm                      c0     c1     c2     c3     c4     c5     c6     c7     c8     c9    c10    c11
+OURS_M2_corr_cts              278    175    348    266    360    261    453    470    205    310    304    515
+PAPER_ts_llm                  204    184    349    256    374    382    488    419    223    290    375    507
+PAPER_cal_gated               236    165    358    376    393    434    431    532    206    309    346    488
+cts_baseline                  216    180    369    264    435    365    515    458    244    294    413    530
+OURS_B2_icpd                  292    219    330    289    446    469    450    439    253    286    368    498
+weak_oracle_topm              243    194    377    298    444    357    492    510    277    343    438    534
+PAPER_jump_start              244    189    377    256    474    390    506    443    325    338    446    531
+PAPER_llm_cucb_at             391    595    444    584    676    827    406    704    409    411    649    554
+
+--- LLM COST (calls/trial, tokens/trial) ---
+  model             algorithm                    calls  tokens
+  gpt-4.1-mini      OURS_B2_icpd                  10.0    8679
+  gpt-4.1-mini      OURS_M2_corr_cts               1.0     534
+  gpt-4.1-mini      PAPER_cal_gated               10.0   13412
+  gpt-4.1-mini      PAPER_jump_start               1.0    1378
+  gpt-4.1-mini      PAPER_llm_cucb_at             20.0    8320
+  gpt-4.1-mini      PAPER_ts_llm                  20.0    8320
+  gpt-4.1-mini      weak_oracle_topm               1.0     416
+  gpt-5-mini        OURS_B2_icpd                  10.0   11597
+  gpt-5-mini        OURS_M2_corr_cts               1.0     799
+  gpt-5-mini        PAPER_cal_gated               10.0   18260
+  gpt-5-mini        PAPER_jump_start               1.0    1859
+  gpt-5-mini        PAPER_llm_cucb_at             20.0   12871
+  gpt-5-mini        PAPER_ts_llm                  20.0   12878
+  gpt-5-mini        weak_oracle_topm               1.0     644
+  gpt-5.4           OURS_B2_icpd                  10.0    9394
+  gpt-5.4           OURS_M2_corr_cts               1.0     651
+  gpt-5.4           PAPER_cal_gated               10.0   14419
+  gpt-5.4           PAPER_jump_start               1.0    1436
+  gpt-5.4           PAPER_llm_cucb_at             20.0   10560
+  gpt-5.4           PAPER_ts_llm                  20.0   10560
+  gpt-5.4           weak_oracle_topm               1.0     538
+
+====================================================================================================
+STATISTICAL SIGNIFICANCE (pre-registered tests)
+====================================================================================================
+  OURS_B2_icpd: n=120, wins=70/120, mean_reduction=-4.7, t=-0.33, sign_p=0.0824
+  OURS_M2_corr_cts: n=120, wins=83/120, mean_reduction=28.0, t=2.90, sign_p=0.0000

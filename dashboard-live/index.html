@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CombBandits Live Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #131722;
+    --panel-2: #1a2030;
+    --panel-3: #1e2538;
+    --border: #2a3142;
+    --border-light: #343d52;
+    --text: #e6edf3;
+    --text-dim: #c0c8d8;
+    --muted: #8b93a7;
+    --accent: #7aa2f7;
+    --accent-2: #bb9af7;
+    --good: #9ece6a;
+    --good-dim: rgba(158, 206, 106, 0.12);
+    --warn: #e0af68;
+    --warn-dim: rgba(224, 175, 104, 0.12);
+    --bad: #f7768e;
+    --bad-dim: rgba(247, 118, 142, 0.12);
+    --cyan: #7dcfff;
+    --teal: #73daca;
+    --orange: #ff9e64;
+    --grid: rgba(42, 49, 66, 0.6);
+
+    /* Group colors */
+    --grp-cts: #9ece6a;
+    --grp-cts-bg: rgba(158, 206, 106, 0.06);
+    --grp-rr: #7aa2f7;
+    --grp-rr-bg: rgba(122, 162, 247, 0.04);
+    --grp-base: #8b93a7;
+    --grp-base-bg: rgba(139, 147, 167, 0.03);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.5;
+    font-feature-settings: "tnum" 1, "cv01" 1;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    padding: 28px 48px 24px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151a27 0%, var(--bg) 100%);
+    position: relative;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .header-left h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-left h1 .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(247, 118, 142, 0.12);
+    color: var(--bad);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .live-badge .pulse {
+    width: 6px; height: 6px;
+    background: var(--bad);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+  .header-left .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .header-stats {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .header-stat {
+    text-align: right;
+  }
+  .header-stat .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+  .header-stat .value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .header-stat .value.cost { color: var(--warn); }
+  .header-stat .value.time { color: var(--teal); }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-top: 18px;
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .progress-header .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .progress-header .count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .progress-bar {
+    height: 6px;
+    background: var(--panel-2);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+    border-radius: 3px;
+    transition: width 1s ease;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 40px; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15));
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+
+  /* ===== MAIN LAYOUT ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px 48px 48px;
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 1100px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    header { padding: 20px 24px 18px; }
+    .grid { padding: 18px 24px 36px; }
+  }
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    transition: border-color 0.3s ease;
+  }
+  .card:hover {
+    border-color: var(--border-light);
+  }
+  .card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 5px;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  /* ===== CHART CONTAINERS ===== */
+  .chart-wrap {
+    position: relative;
+    height: 400px;
+  }
+  .chart-wrap.short { height: 340px; }
+  .chart-wrap.tall { height: 460px; }
+
+  /* ===== TABLE ===== */
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    padding: 9px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th:first-child, td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 1;
+  }
+  th {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 2px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  th:first-child { z-index: 3; }
+  tbody tr {
+    transition: background 0.15s ease;
+  }
+  tbody tr:hover {
+    background: var(--panel-2) !important;
+  }
+  .rank-col {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    width: 32px;
+  }
+
+  /* Group row tints */
+  .row-cts { background: var(--grp-cts-bg); }
+  .row-rr { background: var(--grp-rr-bg); }
+  .row-base { background: var(--grp-base-bg); }
+
+  /* Pills */
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .pill-cts { background: rgba(158, 206, 106, 0.15); color: var(--good); }
+  .pill-rr { background: rgba(122, 162, 247, 0.15); color: var(--accent); }
+  .pill-base { background: rgba(139, 147, 167, 0.12); color: var(--muted); }
+
+  .agent-name {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* ===== HEATMAP ===== */
+  .heatmap-grid {
+    display: grid;
+    gap: 2px;
+    font-size: 10px;
+  }
+  .heatmap-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    border-radius: 3px;
+    font-weight: 500;
+    font-size: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.15s ease;
+    cursor: default;
+  }
+  .heatmap-cell:hover {
+    transform: scale(1.05);
+    z-index: 1;
+  }
+  .heatmap-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 500;
+    text-align: center;
+    padding: 4px 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .heatmap-label-row {
+    text-align: right;
+    padding-right: 8px;
+  }
+
+  /* ===== LEGEND ===== */
+  .legend {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    padding: 20px 48px 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .poll-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .poll-dot {
+    width: 6px; height: 6px;
+    background: var(--good);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .poll-dot.error {
+    background: var(--bad);
+  }
+  .separator {
+    color: var(--border);
+  }
+
+  /* ===== LOADING STATE ===== */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 20px;
+  }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .loading-text {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .loading-sub {
+    font-size: 12px;
+    color: var(--border-light);
+  }
+
+  /* ===== IMPROVEMENT LABELS ===== */
+  .improvement {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .improvement.positive {
+    background: rgba(158, 206, 106, 0.15);
+    color: var(--good);
+  }
+  .improvement.negative {
+    background: rgba(247, 118, 142, 0.15);
+    color: var(--bad);
+  }
+</style>
+</head>
+<body>
+
+<div id="app-loading" class="loading-state">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Waiting for data...</div>
+  <div class="loading-sub">Polling https://...s3.amazonaws.com/live/results.json</div>
+</div>
+
+<div id="app-main" style="display:none;">
+
+<header>
+  <div class="header-top">
+    <div class="header-left">
+      <h1>
+        CombBandits Tier 4 — Full Scale
+        <span class="live-badge"><span class="pulse"></span>LIVE</span>
+      </h1>
+      <div class="sub" id="experiment-info">N-family vs CTS/CUCB/RandomCorr — gpt-5.4 flagship model</div>
+    </div>
+    <div class="header-stats">
+      <div class="header-stat">
+        <div class="label">Model</div>
+        <div class="value" id="stat-model" style="font-size:13px; color:var(--accent-2);">--</div>
+      </div>
+      <div class="header-stat">
+        <div class="label">Elapsed</div>
+        <div class="value time" id="stat-elapsed">--:--</div>
+      </div>
+      <div class="header-stat">
+        <div class="label">Est. Cost</div>
+        <div class="value cost" id="stat-cost">$--</div>
+      </div>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-header">
+      <span class="label">Experiment Progress</span>
+      <span class="count" id="progress-count">-- / --</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+    </div>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- SECTION 1: Live Ranking Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="section-num">1</span> Live Ranking</div>
+    </div>
+    <div class="card-desc">Algorithms ranked by mean final regret. Aggregated across all completed seeds and configs.</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-cts);"></div> CTS Warmup (ours)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-rr);"></div> Round-Robin Warmup</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-base);"></div> Baselines</div>
+    </div>
+    <div class="table-wrap" style="max-height: 520px; overflow-y: auto;">
+      <table id="ranking-table">
+        <thead>
+          <tr>
+            <th style="width:32px;">#</th>
+            <th>Algorithm</th>
+            <th>Group</th>
+            <th>Mean Regret</th>
+            <th>Stderr</th>
+            <th>Median</th>
+            <th>Win Count</th>
+            <th>Oracle Overlap</th>
+            <th>Oracle Perfect %</th>
+            <th>Trials</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Regret Curves -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="section-num">2</span> Regret Curves</div>
+    </div>
+    <div class="card-desc">Mean cumulative regret over time (sampled every 100 rounds). One line per algorithm, colored by group.</div>
+    <div class="chart-wrap tall"><canvas id="ch-regret"></canvas></div>
+  </div>
+
+  <!-- SECTION 3 & 4 side by side -->
+  <div class="grid-2">
+
+    <!-- SECTION 3: Head-to-Head -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="section-num">3</span> Head-to-Head: CTS vs RR Warmup</div>
+      </div>
+      <div class="card-desc">Paired comparison of CTS-warmup vs Round-Robin warmup variants. Green = CTS wins.</div>
+      <div class="chart-wrap"><canvas id="ch-h2h"></canvas></div>
+    </div>
+
+    <!-- SECTION 4: Oracle Quality -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="section-num">4</span> Oracle Quality vs Regret</div>
+      </div>
+      <div class="card-desc">Mean oracle overlap (x) vs final regret (y) for each algorithm. CTS-warmup methods highlighted.</div>
+      <div class="chart-wrap"><canvas id="ch-oracle"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- SECTION 5: Per-Config Heatmap -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="section-num">5</span> Per-Config Winner Heatmap</div>
+    </div>
+    <div class="card-desc">Which algorithm achieves lowest mean regret for each (config_id, gap_type) combination.</div>
+    <div id="heatmap-container" style="overflow-x: auto;"></div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="poll-indicator">
+    <span class="poll-dot" id="poll-dot"></span>
+    <span id="poll-status">Polling every 10s</span>
+  </div>
+  <span class="separator">|</span>
+  <span>Last update: <span id="last-update">--</span></span>
+  <span class="separator">|</span>
+  <span>d=<span id="foot-d">--</span>, m=<span id="foot-m">--</span>, T=<span id="foot-T">--</span></span>
+</footer>
+
+</div>
+
+<script>
+// ============================================================
+// CombBandits Live Dashboard
+// ============================================================
+
+const DATA_URL = 'https://combbandits-results-099841456154.s3.amazonaws.com/live/results.json';
+const POLL_INTERVAL = 10000;
+
+// --- Algorithm Groups (Tier 4: N-family + baselines + ablation) ---
+const GROUPS = {
+  baselines: ['CTS', 'CUCB'],
+  rr: ['PAPER_ts_llm', 'ABLATION_random_corr', 'M2_corr_cts'],
+  cts: ['N1_corr_full', 'N4_robust_corr', 'N5_corr_full_robust']
+};
+
+// Head-to-head pairs for Tier 4: novel vs baseline/ablation
+const H2H_PAIRS = [
+  { label: 'N1 vs CTS', cts: 'N1_corr_full', rr: 'CTS' },
+  { label: 'N4 vs CTS', cts: 'N4_robust_corr', rr: 'CTS' },
+  { label: 'N5 vs CTS', cts: 'N5_corr_full_robust', rr: 'CTS' },
+  { label: 'N4 vs RandCorr', cts: 'N4_robust_corr', rr: 'ABLATION_random_corr' }
+];
+
+function getGroup(agent) {
+  if (GROUPS.cts.includes(agent)) return 'cts';  // our novel N-family
+  if (GROUPS.rr.includes(agent)) return 'rr';  // baselines/ablation
+  return 'baselines';  // CTS/CUCB
+}
+
+// --- Color palette per algorithm, stable ---
+const GROUP_COLORS = {
+  cts: ['#9ece6a', '#73daca', '#a9dc76', '#7dcfff'],
+  rr: ['#7aa2f7', '#bb9af7', '#a9b1d6', '#7f8dba', '#5a7dd1', '#c0caf5'],
+  baselines: ['#8b93a7', '#636d83']
+};
+const agentColorMap = new Map();
+function assignColors() {
+  const counts = { cts: 0, rr: 0, baselines: 0 };
+  for (const [grp, agents] of Object.entries(GROUPS)) {
+    for (const a of agents) {
+      agentColorMap.set(a, GROUP_COLORS[grp][counts[grp] % GROUP_COLORS[grp].length]);
+      counts[grp]++;
+    }
+  }
+}
+assignColors();
+
+function colorOf(agent) {
+  return agentColorMap.get(agent) || '#8b93a7';
+}
+
+// --- Formatting ---
+function fmt(n, decimals = 1) {
+  if (n === null || n === undefined || isNaN(n)) return '--';
+  return n.toFixed(decimals);
+}
+function fmtPct(n) {
+  if (n === null || n === undefined || isNaN(n)) return '--';
+  return (n * 100).toFixed(1) + '%';
+}
+function prettyAgent(name) {
+  return name.replace(/_/g, ' ');
+}
+function elapsed(startISO) {
+  if (!startISO) return '--:--';
+  const start = new Date(startISO);
+  const now = new Date();
+  const diff = Math.max(0, Math.floor((now - start) / 1000));
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+  return `${m}m ${String(s).padStart(2, '0')}s`;
+}
+
+// --- Data aggregation ---
+function aggregate(results) {
+  const byAgent = new Map();
+  for (const r of results) {
+    if (!byAgent.has(r.agent)) byAgent.set(r.agent, []);
+    byAgent.get(r.agent).push(r);
+  }
+
+  // Win counts: for each (config_id, seed) who has lowest regret?
+  // Actually, group by config_id + gap_type for wins
+  const configKey = (r) => `${r.config_id}_${r.gap_type}`;
+  const byConfig = new Map();
+  for (const r of results) {
+    const k = configKey(r);
+    if (!byConfig.has(k)) byConfig.set(k, []);
+    byConfig.get(k).push(r);
+  }
+
+  // For per-config winner, average over seeds then pick best agent
+  const configWinners = new Map();
+  const configAgentMeans = new Map(); // key -> Map<agent, meanRegret>
+  for (const [k, rows] of byConfig) {
+    const agentAvg = new Map();
+    for (const r of rows) {
+      if (!agentAvg.has(r.agent)) agentAvg.set(r.agent, []);
+      agentAvg.get(r.agent).push(r.final_regret);
+    }
+    let bestAgent = null, bestMean = Infinity;
+    const means = new Map();
+    for (const [agent, vals] of agentAvg) {
+      const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+      means.set(agent, m);
+      if (m < bestMean) { bestMean = m; bestAgent = agent; }
+    }
+    configWinners.set(k, bestAgent);
+    configAgentMeans.set(k, means);
+  }
+
+  // Count wins per agent
+  const winCounts = new Map();
+  for (const [, winner] of configWinners) {
+    winCounts.set(winner, (winCounts.get(winner) || 0) + 1);
+  }
+
+  // Per-agent summary
+  const summary = [];
+  for (const [agent, rows] of byAgent) {
+    const regrets = rows.map(r => r.final_regret);
+    const n = regrets.length;
+    const mean = regrets.reduce((a, b) => a + b, 0) / n;
+    const variance = regrets.reduce((a, v) => a + (v - mean) ** 2, 0) / n;
+    const stderr = Math.sqrt(variance) / Math.sqrt(n);
+    const sorted = [...regrets].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+
+    const overlaps = rows.filter(r => r.oracle_mean_overlap != null).map(r => r.oracle_mean_overlap);
+    const meanOverlap = overlaps.length ? overlaps.reduce((a, b) => a + b, 0) / overlaps.length : null;
+
+    const perfRates = rows.filter(r => r.oracle_perfect_rate != null).map(r => r.oracle_perfect_rate);
+    const meanPerfRate = perfRates.length ? perfRates.reduce((a, b) => a + b, 0) / perfRates.length : null;
+
+    // Aggregate regret curves: align by index, compute mean at each step
+    const curves = rows.filter(r => r.regret_curve && r.regret_curve.length > 0).map(r => r.regret_curve);
+    let meanCurve = [];
+    if (curves.length > 0) {
+      const maxLen = Math.max(...curves.map(c => c.length));
+      for (let i = 0; i < maxLen; i++) {
+        const vals = curves.filter(c => i < c.length).map(c => c[i]);
+        meanCurve.push(vals.reduce((a, b) => a + b, 0) / vals.length);
+      }
+    }
+
+    summary.push({
+      agent, mean, stderr, median,
+      wins: winCounts.get(agent) || 0,
+      meanOverlap, meanPerfRate,
+      meanCurve,
+      group: getGroup(agent),
+      n
+    });
+  }
+
+  summary.sort((a, b) => a.mean - b.mean);
+
+  return { summary, configWinners, configAgentMeans, byConfig };
+}
+
+// ===== CHART INSTANCES =====
+let charts = {};
+function destroyAll() {
+  for (const k in charts) {
+    if (charts[k]) charts[k].destroy();
+  }
+  charts = {};
+}
+
+const CHART_DEFAULTS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 800, easing: 'easeOutQuart' },
+  plugins: {
+    legend: {
+      labels: {
+        color: '#e6edf3',
+        font: { family: "'Inter', sans-serif", size: 11 },
+        boxWidth: 12,
+        boxHeight: 12,
+        borderRadius: 2,
+        useBorderRadius: true,
+        padding: 14
+      }
+    },
+    tooltip: {
+      backgroundColor: '#1a2030',
+      borderColor: '#2a3142',
+      borderWidth: 1,
+      titleColor: '#e6edf3',
+      bodyColor: '#e6edf3',
+      padding: 12,
+      cornerRadius: 8,
+      titleFont: { family: "'Inter', sans-serif", weight: '600', size: 12 },
+      bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+      displayColors: true,
+      boxWidth: 8,
+      boxHeight: 8,
+      boxPadding: 4
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 10 } },
+      grid: { color: 'rgba(42, 49, 66, 0.6)', lineWidth: 0.5 },
+      border: { color: '#2a3142' }
+    },
+    y: {
+      ticks: { color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 10 } },
+      grid: { color: 'rgba(42, 49, 66, 0.6)', lineWidth: 0.5 },
+      border: { color: '#2a3142' }
+    }
+  }
+};
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+// ===== RENDER FUNCTIONS =====
+
+function renderHeader(exp, nResults) {
+  document.getElementById('stat-model').textContent = exp.model || '--';
+  document.getElementById('stat-elapsed').textContent = elapsed(exp.start_time);
+  document.getElementById('stat-cost').textContent = exp.est_cost_usd != null ? `$${exp.est_cost_usd}` : '$--';
+  const pct = exp.total_trials > 0 ? (exp.completed / exp.total_trials) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-count').textContent =
+    `${exp.completed || nResults} / ${exp.total_trials} trials (${pct.toFixed(1)}%)`;
+  document.getElementById('experiment-info').textContent =
+    `d=${exp.d}, m=${exp.m}, T=${exp.T} | ${exp.n_configs} configs x ${exp.n_seeds} seeds`;
+  document.getElementById('foot-d').textContent = exp.d;
+  document.getElementById('foot-m').textContent = exp.m;
+  document.getElementById('foot-T').textContent = exp.T;
+}
+
+function renderRankingTable(summary) {
+  const tbody = document.querySelector('#ranking-table tbody');
+  tbody.innerHTML = '';
+  summary.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    const grpClass = s.group === 'cts' ? 'row-cts' : s.group === 'rr' ? 'row-rr' : 'row-base';
+    tr.className = grpClass;
+    const pillClass = s.group === 'cts' ? 'pill-cts' : s.group === 'rr' ? 'pill-rr' : 'pill-base';
+    const grpLabel = s.group === 'cts' ? 'CTS' : s.group === 'rr' ? 'RR' : 'Base';
+    tr.innerHTML = `
+      <td class="rank-col">${i + 1}</td>
+      <td><span class="agent-name" style="color:${colorOf(s.agent)}">${prettyAgent(s.agent)}</span></td>
+      <td><span class="pill ${pillClass}">${grpLabel}</span></td>
+      <td class="mono">${fmt(s.mean)}</td>
+      <td class="mono" style="color:var(--muted);">±${fmt(s.stderr)}</td>
+      <td class="mono">${fmt(s.median)}</td>
+      <td class="mono" style="color:${s.wins > 0 ? 'var(--warn)' : 'var(--muted)'};">${s.wins}</td>
+      <td class="mono">${fmt(s.meanOverlap, 2)}</td>
+      <td class="mono">${fmtPct(s.meanPerfRate)}</td>
+      <td class="mono" style="color:var(--muted);">${s.n}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderRegretCurves(summary, T) {
+  const ctx = document.getElementById('ch-regret');
+  const stepsPerTick = 100;
+  const datasets = summary.filter(s => s.meanCurve.length > 0).map(s => {
+    const grp = s.group;
+    return {
+      label: prettyAgent(s.agent),
+      data: s.meanCurve,
+      borderColor: colorOf(s.agent),
+      backgroundColor: colorOf(s.agent) + '18',
+      borderWidth: grp === 'cts' ? 2.5 : 1.5,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      tension: 0.3,
+      fill: false,
+      order: grp === 'cts' ? 0 : grp === 'rr' ? 1 : 2,
+      borderDash: grp === 'baselines' ? [6, 3] : []
+    };
+  });
+
+  // Sort so CTS lines render on top
+  datasets.sort((a, b) => a.order - b.order);
+
+  const maxLen = Math.max(...datasets.map(d => d.data.length), 1);
+  const labels = Array.from({ length: maxLen }, (_, i) => i * stepsPerTick);
+
+  const opts = deepClone(CHART_DEFAULTS);
+  opts.scales.x.title = { display: true, text: 'Round', color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 11 } };
+  opts.scales.y.title = { display: true, text: 'Cumulative Regret', color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 11 } };
+  opts.scales.y.beginAtZero = true;
+  opts.plugins.legend.position = 'top';
+  opts.interaction = { mode: 'index', intersect: false };
+
+  charts.regret = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: opts
+  });
+}
+
+function renderH2H(summary) {
+  const ctx = document.getElementById('ch-h2h');
+  const sumMap = new Map(summary.map(s => [s.agent, s]));
+
+  const labels = [];
+  const ctsData = [];
+  const rrData = [];
+  const improvementData = [];
+
+  for (const pair of H2H_PAIRS) {
+    const cts = sumMap.get(pair.cts);
+    const rr = sumMap.get(pair.rr);
+    labels.push(pair.label);
+    const ctsVal = cts ? cts.mean : 0;
+    const rrVal = rr ? rr.mean : 0;
+    ctsData.push(ctsVal);
+    rrData.push(rrVal);
+    if (rrVal > 0 && ctsVal > 0) {
+      improvementData.push(((rrVal - ctsVal) / rrVal * 100).toFixed(1));
+    } else {
+      improvementData.push(null);
+    }
+  }
+
+  const opts = deepClone(CHART_DEFAULTS);
+  opts.scales.x.grid = { display: false };
+  opts.scales.y.beginAtZero = true;
+  opts.scales.y.title = { display: true, text: 'Mean Final Regret', color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 11 } };
+  opts.plugins.legend.position = 'top';
+  opts.plugins.tooltip.callbacks = {
+    afterBody: function(tooltipItems) {
+      const idx = tooltipItems[0].dataIndex;
+      const imp = improvementData[idx];
+      if (imp !== null) {
+        return `\nCTS improvement: ${imp}%`;
+      }
+      return '';
+    }
+  };
+
+  // Custom plugin to draw improvement labels on top of bars
+  const improvementPlugin = {
+    id: 'improvementLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx: c, scales } = chart;
+      const meta0 = chart.getDatasetMeta(0);
+      const meta1 = chart.getDatasetMeta(1);
+      c.save();
+      c.font = "600 10px 'Inter', sans-serif";
+      c.textAlign = 'center';
+      for (let i = 0; i < improvementData.length; i++) {
+        if (improvementData[i] === null) continue;
+        const imp = parseFloat(improvementData[i]);
+        const bar0 = meta0.data[i];
+        const bar1 = meta1.data[i];
+        const topY = Math.min(bar0.y, bar1.y);
+        c.fillStyle = imp > 0 ? '#9ece6a' : '#f7768e';
+        const sign = imp > 0 ? '+' : '';
+        c.fillText(`${sign}${improvementData[i]}%`, (bar0.x + bar1.x) / 2, topY - 8);
+      }
+      c.restore();
+    }
+  };
+
+  charts.h2h = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'CTS Warmup',
+          data: ctsData,
+          backgroundColor: 'rgba(158, 206, 106, 0.7)',
+          borderColor: '#9ece6a',
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false
+        },
+        {
+          label: 'RR Warmup',
+          data: rrData,
+          backgroundColor: 'rgba(122, 162, 247, 0.5)',
+          borderColor: '#7aa2f7',
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false
+        }
+      ]
+    },
+    options: opts,
+    plugins: [improvementPlugin]
+  });
+}
+
+function renderOracleScatter(summary) {
+  const ctx = document.getElementById('ch-oracle');
+
+  const datasets = summary
+    .filter(s => s.meanOverlap != null && s.group !== 'baselines')
+    .map(s => ({
+      label: prettyAgent(s.agent),
+      data: [{ x: s.meanOverlap, y: s.mean }],
+      backgroundColor: colorOf(s.agent),
+      borderColor: s.group === 'cts' ? '#9ece6a' : 'transparent',
+      borderWidth: s.group === 'cts' ? 2.5 : 0,
+      pointRadius: s.group === 'cts' ? 9 : 6,
+      pointHoverRadius: 12,
+      pointStyle: s.group === 'cts' ? 'rectRounded' : 'circle'
+    }));
+
+  const opts = deepClone(CHART_DEFAULTS);
+  opts.scales.x.title = { display: true, text: 'Mean Oracle Overlap', color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 11 } };
+  opts.scales.y.title = { display: true, text: 'Mean Final Regret', color: '#8b93a7', font: { family: "'Inter', sans-serif", size: 11 } };
+  opts.plugins.legend.display = false;
+  opts.plugins.tooltip.callbacks = {
+    label: (ctx) => `${ctx.dataset.label}: overlap=${ctx.parsed.x.toFixed(2)}, regret=${ctx.parsed.y.toFixed(1)}`
+  };
+
+  charts.oracle = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: opts
+  });
+}
+
+function renderHeatmap(configWinners, results) {
+  const container = document.getElementById('heatmap-container');
+
+  // Discover unique config_ids and gap_types
+  const configIds = [...new Set(results.map(r => r.config_id))].sort((a, b) => a - b);
+  const gapTypes = [...new Set(results.map(r => r.gap_type))].sort();
+
+  if (configIds.length === 0 || gapTypes.length === 0) {
+    container.innerHTML = '<div style="color:var(--muted); font-size:13px; padding:12px;">Not enough data for heatmap yet.</div>';
+    return;
+  }
+
+  // Build grid: rows = gap_types, cols = config_ids
+  const nCols = configIds.length + 1; // +1 for row label
+  const grid = document.createElement('div');
+  grid.className = 'heatmap-grid';
+  grid.style.gridTemplateColumns = `80px repeat(${configIds.length}, minmax(38px, 1fr))`;
+
+  // Header row
+  const cornerCell = document.createElement('div');
+  cornerCell.className = 'heatmap-label';
+  cornerCell.textContent = '';
+  grid.appendChild(cornerCell);
+  for (const cid of configIds) {
+    const h = document.createElement('div');
+    h.className = 'heatmap-label';
+    h.textContent = `C${cid}`;
+    h.style.fontSize = '9px';
+    grid.appendChild(h);
+  }
+
+  // Data rows
+  for (const gap of gapTypes) {
+    const rowLabel = document.createElement('div');
+    rowLabel.className = 'heatmap-label heatmap-label-row';
+    rowLabel.textContent = gap;
+    rowLabel.style.fontSize = '9px';
+    grid.appendChild(rowLabel);
+
+    for (const cid of configIds) {
+      const k = `${cid}_${gap}`;
+      const winner = configWinners.get(k);
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      if (winner) {
+        const grp = getGroup(winner);
+        const bgAlpha = grp === 'cts' ? '44' : grp === 'rr' ? '33' : '22';
+        cell.style.background = colorOf(winner) + bgAlpha;
+        cell.style.color = colorOf(winner);
+        cell.textContent = winner.replace('cts_warm_', 'cw_').replace('_rr', '').replace('_cts', '').slice(0, 8);
+        cell.title = `${prettyAgent(winner)} (config ${cid}, ${gap})`;
+      } else {
+        cell.style.background = 'var(--panel-2)';
+        cell.style.color = 'var(--muted)';
+        cell.textContent = '--';
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+// ===== MAIN RENDER =====
+function render(data) {
+  const { experiment, results } = data;
+  if (!results || results.length === 0) {
+    document.getElementById('app-loading').style.display = 'flex';
+    document.getElementById('app-main').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('app-loading').style.display = 'none';
+  document.getElementById('app-main').style.display = 'block';
+
+  renderHeader(experiment, results.length);
+
+  const { summary, configWinners } = aggregate(results);
+
+  destroyAll();
+  renderRankingTable(summary);
+  renderRegretCurves(summary, experiment.T);
+  renderH2H(summary);
+  renderOracleScatter(summary);
+  renderHeatmap(configWinners, results);
+
+  // Update footer timestamp
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+}
+
+// ===== POLLING =====
+let lastData = null;
+let pollTimer = null;
+let consecutiveErrors = 0;
+
+async function fetchData() {
+  try {
+    const resp = await fetch(DATA_URL, { cache: 'no-store' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    consecutiveErrors = 0;
+    document.getElementById('poll-dot').classList.remove('error');
+    document.getElementById('poll-status').textContent = 'Polling every 10s';
+    lastData = data;
+    render(data);
+  } catch (err) {
+    consecutiveErrors++;
+    console.warn('Fetch error:', err.message);
+    document.getElementById('poll-dot').classList.add('error');
+    document.getElementById('poll-status').textContent = `Error (attempt ${consecutiveErrors})`;
+
+    // If we have previous data, keep showing it
+    if (lastData) {
+      // Just update the elapsed time
+      if (lastData.experiment) {
+        document.getElementById('stat-elapsed').textContent = elapsed(lastData.experiment.start_time);
+      }
+    }
+  }
+}
+
+function startPolling() {
+  fetchData();
+  pollTimer = setInterval(fetchData, POLL_INTERVAL);
+}
+
+// ===== ELAPSED TIME UPDATER (every second) =====
+setInterval(() => {
+  if (lastData && lastData.experiment && lastData.experiment.start_time) {
+    document.getElementById('stat-elapsed').textContent = elapsed(lastData.experiment.start_time);
+  }
+}, 1000);
+
+// ===== INIT =====
+Chart.defaults.color = '#e6edf3';
+Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
+startPolling();
+</script>
+
+</body>
+</html>

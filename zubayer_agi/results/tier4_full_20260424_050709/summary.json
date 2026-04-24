@@ -1,0 +1,8 @@
+{
+  "total_trials": 2480,
+  "elapsed_min": 12.7,
+  "model": "gpt-5.4",
+  "T": 2500,
+  "n_seeds": 20,
+  "n_algos": 8
+}

@@ -1,0 +1,53 @@
+====================================================================================================
+BULLETPROOF EXPERIMENT: 3 Winners + 4 Paper Baselines vs CTS
+====================================================================================================
+Trials per algo: 25
+Configs: 5 | Seeds per config: 5
+T: 1500
+
+--- OVERALL RANKING (lower regret = better) ---
+rank algorithm                        mean  stderr   median    vs_CTS
+1    CHAMP_B2_icpd                   181.1   16.71    141.6    +23.9% <-- BEATS CTS
+2    OURS_F2_query_design            211.1   18.99    167.4    +11.3% <-- BEATS CTS
+3    PAPER_calibration_gated         212.4   20.11    177.2    +10.8% <-- BEATS CTS
+4    M2_correlated_cts               219.2   13.73    198.6     +7.9% <-- BEATS CTS
+5    M3_b2_correlated                232.5   18.39    187.9     +2.4% <-- BEATS CTS
+6    cts_baseline                    238.1   12.20    232.6     +0.0%
+7    M4_b2_patched                   251.1   13.42    213.0     -5.5%
+8    M1_b2_plus                      252.5   11.81    246.5     -6.1%
+
+--- PAIRED COMPARISON vs CTS (every algo on same (config, seed) as CTS) ---
+algorithm                       wins  losses   mean_diff  stderr  t_stat  wilcoxon_p
+CHAMP_B2_icpd                     23       2        57.0   12.70    4.49      0.0000
+OURS_F2_query_design              18       7        27.0   13.89    1.94      0.0433
+PAPER_calibration_gated           17       8        25.6   15.46    1.66      0.1078
+M2_correlated_cts                 16       9        18.9   13.02    1.45      0.2295
+M3_b2_correlated                  14      11         5.6   13.69    0.41      0.6900
+M4_b2_patched                     10      15       -13.0   14.48   -0.90      0.4244
+M1_b2_plus                        10      15       -14.4   10.42   -1.38      0.4244
+
+--- PER-CONFIG MEAN REGRET ---
+algorithm                        cfg_0     cfg_1     cfg_2     cfg_3     cfg_4
+CHAMP_B2_icpd                    131.8     121.6     269.6     183.8     198.8
+OURS_F2_query_design             157.4     160.7     277.2     242.3     217.8
+PAPER_calibration_gated          188.2     127.7     271.6     249.4     225.1
+M2_correlated_cts                195.4     162.1     288.9     217.0     232.4
+M3_b2_correlated                 161.8     168.6     300.2     323.8     207.8
+cts_baseline                     212.9     175.0     298.9     256.7     246.8
+M4_b2_patched                    243.5     191.3     309.1     227.8     283.6
+M1_b2_plus                       246.3     199.5     315.0     242.8     258.8
+
+--- WIN COUNT (lowest regret in (config, seed)) ---
+  CHAMP_B2_icpd               12/25
+  PAPER_calibration_gated     6/25
+  M3_b2_correlated            2/25
+  OURS_F2_query_design        2/25
+  M1_b2_plus                  1/25
+  M4_b2_patched               1/25
+  M2_correlated_cts           1/25
+
+--- LLM COST (per trial average) ---
+  M2_correlated_cts           calls=1.0  tokens=531
+  M3_b2_correlated            calls=9.0  tokens=6669
+  M4_b2_patched               calls=7.0  tokens=5175
+  M1_b2_plus                  calls=10.0  tokens=7387
