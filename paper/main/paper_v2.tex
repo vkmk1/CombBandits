@@ -655,126 +655,187 @@ In practice, \CorrFull{} is the simpler and more consistent choice; \RobustCorr{
 
 \section{Formal Properties of Correlated Thompson Sampling}\label{app:proofs}
 
-We establish five formal properties of the \CorrCTS{} family. Throughout, we write $n_i = \alpha_i + \beta_i$ for the total count of arm $i$, $\bar\mu_i = \alpha_i / n_i$ for the Beta posterior mean, and $\sigma_i^2 = \alpha_i \beta_i / (n_i^2 (n_i + 1))$ for the Beta posterior variance. We let $L$ denote the lower-triangular Cholesky factor of $\Sigma$, so that $LL^\top = \Sigma$.
+We establish five formal properties of the \CorrCTS{} family.
+These guarantee that our algorithms are well-defined, that the LLM cannot corrupt learning, and that \RobustCorr{} is no worse than standard CTS.
 
+\textbf{Notation.}
+Throughout, $n_i = \alpha_i + \beta_i$ is the total count of arm $i$,
+$\bar\mu_i = \alpha_i / n_i$ is the Beta posterior mean,
+$\sigma_i^2 = \alpha_i \beta_i / (n_i^2 (n_i + 1))$ is the Beta posterior variance,
+and $L$ is the lower-triangular Cholesky factor of $\Sigma$ (so $LL^\top = \Sigma$).
+
+\medskip
+
+% --- D.1 CTS Recovery ---
 \begin{proposition}[CTS Recovery]\label{prop:recovery}
-When $\Sigma = I_d$, \Cref{alg:corrfull} reduces to standard CTS with Gaussian-approximated posteriors. That is, the sampled parameter vector satisfies $\theta_i \sim \mathcal{N}(\bar\mu_i, \sigma_i^2)$ independently across arms $i \in [d]$.
-\end{proposition}
-
-\begin{proof}
-When $\Sigma = I_d$, the Cholesky decomposition yields $L = I_d$, since $I_d = I_d \cdot I_d^\top$.
-At each round $t > T_w$, the algorithm draws $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I_d)$ and computes $\mathbf{z} = L\boldsymbol{\epsilon} = I_d \boldsymbol{\epsilon} = \boldsymbol{\epsilon}$.
-Therefore $z_i = \epsilon_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 1)$ for each $i \in [d]$.
-Line~14 of \Cref{alg:corrfull} sets $\theta_i = \bar\mu_i + \sigma_i \cdot z_i = \bar\mu_i + \sigma_i \cdot \epsilon_i$.
-Since $\epsilon_i \sim \mathcal{N}(0,1)$ independently, we have $\theta_i \sim \mathcal{N}(\bar\mu_i, \sigma_i^2)$ independently for all $i$.
-This is exactly the Gaussian moment-matched approximation to $\text{Beta}(\alpha_i, \beta_i)$, with each arm sampled independently---i.e., standard CTS with Gaussian sampling.
-\end{proof}
-
-\begin{proposition}[Posterior Integrity]\label{prop:integrity}
-The Beta posteriors $(\alpha_i, \beta_i)_{i \in [d]}$ in \Cref{alg:corrfull} are updated identically to standard CTS. The LLM-derived covariance matrix $\Sigma$ affects only the sampling distribution, not the posterior update rule.
-\end{proposition}
-
-\begin{proof}
-We exhibit the separation between the two operations in \Cref{alg:corrfull}.
-
-\textit{Posterior update (lines~16--17).}
-After playing $S_t$ and observing $(X_{i,t})_{i \in S_t}$, the update rule is:
+When $\Sigma = I_d$, \Cref{alg:corrfull} reduces to standard CTS with Gaussian-approximated posteriors:
 \[
-\alpha_i \leftarrow \alpha_i + X_{i,t}, \quad \beta_i \leftarrow \beta_i + (1 - X_{i,t}), \quad \forall\, i \in S_t.
+\theta_i \sim \mathcal{N}(\bar\mu_i,\; \sigma_i^2) \quad \text{independently across arms } i \in [d].
 \]
-This is the standard Beta-Bernoulli conjugate update. Crucially, the right-hand side depends only on the current $(\alpha_i, \beta_i)$ and the observed reward $X_{i,t} \in \{0,1\}$. Neither $\Sigma$, $L$, $\boldsymbol{\epsilon}$, nor any LLM output enters this computation.
+\end{proposition}
 
-\textit{Sampling step (lines~11--14).}
-The correlated sample $\theta_i = \bar\mu_i + \sigma_i \cdot (L\boldsymbol{\epsilon})_i$ reads $(\alpha_i, \beta_i)$ to compute $(\bar\mu_i, \sigma_i)$ and uses $\Sigma$ through its Cholesky factor $L$. This step produces the decision variable $\boldsymbol{\theta}$ but does not write to $(\alpha_i, \beta_i)$.
-
-Since the posterior update at time $t$ depends only on $(\alpha_i^{(t)}, \beta_i^{(t)}, X_{i,t})$ and the sampling step depends only on $(\alpha_i^{(t)}, \beta_i^{(t)}, \Sigma)$, with neither modifying the other's inputs, the two operations are functionally independent. By induction on $t$, the sequence $\{(\alpha_i^{(t)}, \beta_i^{(t)})\}_{t \geq 1}$ is identical to that of standard CTS run on the same reward sequence.
+\begin{proof}
+When $\Sigma = I_d$, the Cholesky factor is $L = I_d$.
+At each round $t > T_w$, line~13 of \Cref{alg:corrfull} draws $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I_d)$, and line~14 computes:
+\[
+\theta_i \;=\; \bar\mu_i + \sigma_i \cdot (L\boldsymbol{\epsilon})_i
+      \;=\; \bar\mu_i + \sigma_i \cdot \epsilon_i,
+\]
+where $\epsilon_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 1)$.
+Therefore $\theta_i \sim \mathcal{N}(\bar\mu_i, \sigma_i^2)$ independently for all $i$---exactly the Gaussian moment-matched CTS.
 \end{proof}
 
+\medskip
+
+% --- D.2 Posterior Integrity ---
+\begin{proposition}[Posterior Integrity]\label{prop:integrity}
+The Beta posteriors $(\alpha_i, \beta_i)_{i \in [d]}$ in \Cref{alg:corrfull} are updated identically to standard CTS.
+The LLM-derived covariance $\Sigma$ affects the sampling distribution only; it never enters the posterior update.
+\end{proposition}
+
+\begin{proof}
+We exhibit the separation between the two data paths in \Cref{alg:corrfull}.
+
+\textit{Posterior update} (line~18).
+After playing $S_t$ and observing $(X_{i,t})_{i \in S_t}$:
+\[
+\alpha_i \;\leftarrow\; \alpha_i + X_{i,t}, \qquad
+\beta_i  \;\leftarrow\; \beta_i + (1 - X_{i,t}), \qquad
+\forall\, i \in S_t.
+\]
+This is the standard Beta--Bernoulli conjugate update.
+The right-hand side depends only on $(\alpha_i, \beta_i)$ and $X_{i,t} \in \{0,1\}$.
+Neither $\Sigma$, $L$, $\boldsymbol{\epsilon}$, nor any LLM output enters this computation.
+
+\textit{Sampling step} (lines~12--14).
+The correlated sample $\theta_i = \bar\mu_i + \sigma_i \cdot (L\boldsymbol{\epsilon})_i$ reads $(\alpha_i, \beta_i)$ to compute $(\bar\mu_i, \sigma_i)$ and uses $\Sigma$ through $L$.
+This step produces the decision variable $\boldsymbol{\theta}$ but does \emph{not} write to $(\alpha_i, \beta_i)$.
+
+\textit{Induction.}
+Since the update at time $t$ depends only on $(\alpha_i^{(t)}, \beta_i^{(t)}, X_{i,t})$ and the sampling step depends only on $(\alpha_i^{(t)}, \beta_i^{(t)}, \Sigma)$, with neither modifying the other's inputs, the sequence $\{(\alpha_i^{(t)}, \beta_i^{(t)})\}_{t \geq 1}$ is identical to that of standard CTS on the same reward sequence.
+\end{proof}
+
+\medskip
+
+% --- D.3 Worst-Case Guarantee ---
 \begin{proposition}[Worst-Case Guarantee for \RobustCorr{}]\label{prop:robust}
 For any LLM oracle and any problem instance, the expected regret of \RobustCorr{} (\Cref{alg:robust}) satisfies
 \[
-\E[R_T(\RobustCorr{})] \;\leq\; \E[R_T(\text{CTS-Gaussian})] \;+\; O\!\Bigl(\frac{T}{\Delta_{\mathrm{check}}}\Bigr),
+\E\bigl[R_T(\RobustCorr{})\bigr]
+  \;\leq\;
+  \E\bigl[R_T(\textnormal{CTS-Gaussian})\bigr]
+  \;+\;
+  O\!\Bigl(\frac{T}{\Delta_{\mathrm{check}}}\Bigr),
 \]
-where $\text{CTS-Gaussian}$ denotes CTS with independent Gaussian-approximated posteriors, and the additive term accounts for the credibility check overhead.
+where \textnormal{CTS-Gaussian} denotes CTS with independent Gaussian-approximated posteriors, and the additive term accounts for the credibility check overhead.
 \end{proposition}
 
 \begin{proof}
-Consider the worst case for the LLM oracle: the clusters returned are adversarial, so the overlap between the LLM's top cluster and the empirically best arms is consistently zero. We analyze the credibility weight and the sampling distribution.
+Consider the worst case: the LLM clusters are adversarial, so the overlap between the top cluster and the empirically best arms is consistently zero.
 
-\textit{Step 1: Credibility decay.}
+\textit{Step 1: Credibility decay.}\;
 The credibility weight evolves as $w_{t+\Delta_{\text{check}}} = 0.7\, w_t + 0.3\, \text{overlap}_t$.
-When $\text{overlap}_t = 0$ at every check, we have $w_t = 0.7^{\lfloor (t - T_w)/\Delta_{\text{check}} \rfloor}$.
-After $k$ checks, $w_t = 0.7^k$. For $k \geq k_0 \coloneqq \lceil \log(1/\delta) / \log(10/7) \rceil$, we have $w_t \leq \delta$ for any desired $\delta > 0$.
+When $\text{overlap}_t = 0$ at every check:
+\[
+w_t \;=\; 0.7^{\lfloor (t - T_w)/\Delta_{\text{check}} \rfloor}.
+\]
+After $k$ checks, $w_t = 0.7^k$.
+For $k \geq k_0 \coloneqq \lceil \log(1/\delta) / \log(10/7) \rceil$, we have $w_t \leq \delta$ for any desired $\delta > 0$.
 
-\textit{Step 2: Sampling distribution.}
-At round $t$, \Cref{alg:robust} produces $\boldsymbol{\theta}_t = w_t \boldsymbol{\theta}^{\mathrm{corr}} + (1 - w_t) \boldsymbol{\theta}^{\mathrm{CTS}}$, where $\boldsymbol{\theta}^{\mathrm{CTS}}_i = \bar\mu_i + \sigma_i \epsilon_{2,i}$ with $\epsilon_{2,i} \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0,1)$.
-As $w_t \to 0$, we have $\boldsymbol{\theta}_t \to \boldsymbol{\theta}^{\mathrm{CTS}}$, which is exactly CTS-Gaussian sampling.
-More precisely, $\theta_{t,i} = \bar\mu_i + \sigma_i[w_t (L\boldsymbol{\epsilon}_1)_i + (1 - w_t) \epsilon_{2,i}]$.
-Since $\boldsymbol{\epsilon}_1, \boldsymbol{\epsilon}_2$ are independent, $\theta_{t,i}$ is Gaussian with mean $\bar\mu_i$ and variance $\sigma_i^2 [w_t^2 (L L^\top)_{ii} + (1 - w_t)^2 + 2w_t(1-w_t) \cdot 0] = \sigma_i^2[w_t^2 \Sigma_{ii} + (1-w_t)^2]$.
-Since $\Sigma_{ii} = 1$, this variance equals $\sigma_i^2[w_t^2 + (1-w_t)^2] \leq \sigma_i^2$ for all $w_t \in [0,1]$, with equality at $w_t \in \{0,1\}$.
+\textit{Step 2: Sampling distribution.}\;
+\Cref{alg:robust} produces $\boldsymbol{\theta}_t = w_t \boldsymbol{\theta}^{\mathrm{corr}} + (1 - w_t) \boldsymbol{\theta}^{\mathrm{CTS}}$.
+Since $\boldsymbol{\epsilon}_1, \boldsymbol{\epsilon}_2$ are independent, each coordinate is Gaussian:
+\[
+\theta_{t,i}
+  \;=\; \bar\mu_i + \sigma_i \bigl[w_t (L\boldsymbol{\epsilon}_1)_i + (1 - w_t)\, \epsilon_{2,i}\bigr],
+\]
+with variance
+$\sigma_i^2[w_t^2 \Sigma_{ii} + (1-w_t)^2] = \sigma_i^2[w_t^2 + (1-w_t)^2] \leq \sigma_i^2$
+for all $w_t \in [0,1]$ (using $\Sigma_{ii} = 1$).
+As $w_t \to 0$, we recover $\boldsymbol{\theta}_t \to \boldsymbol{\theta}^{\mathrm{CTS}}$, i.e., CTS-Gaussian sampling.
 
-\textit{Step 3: Regret decomposition.}
+\textit{Step 3: Regret decomposition.}\;
 Partition the horizon into three phases:
-(i)~warmup rounds $t \leq T_w$: standard CTS, contributing regret $\leq \E[R_{T_w}(\text{CTS})]$;
-(ii)~credibility check rounds: at most $\lfloor T / \Delta_{\text{check}} \rfloor$ checks, each incurring at most $\Delta_{\max} = \max_i \mu_i - \min_i \mu_i \leq 1$ instantaneous regret for the comparison computation, contributing $O(T / \Delta_{\text{check}})$;
-(iii)~all other rounds $t > T_w$: once $w_t \leq \delta$, the marginal distribution of each $\theta_{t,i}$ is within total variation distance $O(\delta)$ of $\mathcal{N}(\bar\mu_i, \sigma_i^2)$.
-By a coupling argument, the actions chosen by \RobustCorr{} and CTS-Gaussian differ with probability at most $O(d\delta)$ per round.
-Choosing $\delta = 1/T$ and noting that the convergence takes $O(\log T)$ checks, the excess regret from the transient phase is $O(\Delta_{\text{check}} \log T)$.
-Combining: $\E[R_T(\RobustCorr{})] \leq \E[R_T(\text{CTS-Gaussian})] + O(T/\Delta_{\text{check}})$.
+\begin{enumerate}
+\item[(i)] \textit{Warmup} ($t \leq T_w$): standard CTS, contributing $\leq \E[R_{T_w}(\text{CTS})]$.
+\item[(ii)] \textit{Check rounds}: at most $\lfloor T / \Delta_{\text{check}} \rfloor$ checks, each incurring at most 1 unit of instantaneous regret, contributing $O(T / \Delta_{\text{check}})$.
+\item[(iii)] \textit{Post-convergence} ($w_t \leq \delta$): the marginal of each $\theta_{t,i}$ is within total variation distance $O(\delta)$ of $\mathcal{N}(\bar\mu_i, \sigma_i^2)$.
+By a coupling argument, actions differ from CTS-Gaussian with probability $\leq O(d\delta)$ per round.
+\end{enumerate}
+Choosing $\delta = 1/T$ (convergence in $O(\log T)$ checks), the excess regret from the transient phase is $O(\Delta_{\text{check}} \log T)$.
+Combining yields the stated bound.
 \end{proof}
 
+\medskip
+
+% --- D.4 Gaussian Approximation ---
 \begin{proposition}[Gaussian Approximation Validity]\label{prop:gaussian}
-Let $X \sim \mathrm{Beta}(\alpha, \beta)$ with $n = \alpha + \beta \geq 2$, $\mu = \alpha/n$, and $\sigma^2 = \alpha\beta/(n^2(n+1))$. Let $Y \sim \mathcal{N}(\mu, \sigma^2)$. Then:
+Let $X \sim \mathrm{Beta}(\alpha, \beta)$ with $n = \alpha + \beta \geq 2$, $\mu = \alpha/n$, and $\sigma^2 = \alpha\beta/(n^2(n+1))$.
+Let $Y \sim \mathcal{N}(\mu, \sigma^2)$.
+Then:
 \begin{enumerate}
-\item[(a)] The first two moments match exactly: $\E[X] = \E[Y] = \mu$ and $\mathrm{Var}(X) = \mathrm{Var}(Y) = \sigma^2$.
-\item[(b)] The total variation distance satisfies $d_{\mathrm{TV}}(\mathrm{Beta}(\alpha,\beta),\, \mathcal{N}(\mu,\sigma^2)) \leq C / \sqrt{n}$ for a universal constant $C > 0$.
+\item[\textnormal{(a)}] The first two moments match exactly: $\E[X] = \E[Y] = \mu$ and $\mathrm{Var}(X) = \mathrm{Var}(Y) = \sigma^2$.
+\item[\textnormal{(b)}] $d_{\mathrm{TV}}\!\bigl(\mathrm{Beta}(\alpha,\beta),\, \mathcal{N}(\mu,\sigma^2)\bigr) \leq C / \sqrt{n}$ for a universal constant $C > 0$.
 \end{enumerate}
 \end{proposition}
 
 \begin{proof}
-\textit{Part (a).}
-By definition, $\E[X] = \alpha/(\alpha+\beta) = \mu$ and $\mathrm{Var}(X) = \alpha\beta/[(\alpha+\beta)^2(\alpha+\beta+1)] = \sigma^2$.
-The Gaussian $Y \sim \mathcal{N}(\mu, \sigma^2)$ has $\E[Y] = \mu$ and $\mathrm{Var}(Y) = \sigma^2$ by construction. Hence the first two moments match exactly.
+\textit{Part (a).}\;
+By definition, $\E[X] = \alpha/(\alpha+\beta) = \mu$ and
+$\mathrm{Var}(X) = \alpha\beta / [(\alpha+\beta)^2(\alpha+\beta+1)] = \sigma^2$.
+The Gaussian $Y$ has $\E[Y] = \mu$ and $\mathrm{Var}(Y) = \sigma^2$ by construction.
 
-\textit{Part (b).}
-We use the P\'{o}lya urn representation. If $U_1, \ldots, U_n$ are the order statistics of $n - 1$ i.i.d.\ $\mathrm{Uniform}(0,1)$ random variables, then $U_{(\alpha)} \sim \mathrm{Beta}(\alpha, \beta)$ where $\alpha + \beta = n$.
-Equivalently, $X \overset{d}{=} \sum_{j=1}^{\alpha} Z_j / n$ where $(Z_1, \ldots, Z_n)$ are negatively associated indicator random variables with $\sum Z_j = \alpha$ marginally.
-By the representation $X = \bar{Z}$ (a normalized sum), we apply the Berry--Esseen theorem for the standardized variable $(X - \mu)/\sigma$.
-The Berry--Esseen bound for sums of bounded random variables gives
+\textit{Part (b).}\;
+We use the P\'{o}lya urn representation:
+$X \overset{d}{=} \sum_{j=1}^{\alpha} Z_j / n$,
+where $(Z_1, \ldots, Z_n)$ are negatively associated indicator random variables with $\sum Z_j = \alpha$.
+By the Berry--Esseen theorem for bounded random variables applied to the standardized $(X - \mu)/\sigma$:
 \[
-\sup_{x \in \R} \bigl|\Prob\bigl((X - \mu)/\sigma \leq x\bigr) - \Phi(x)\bigr| \;\leq\; \frac{C_0}{\sqrt{n}},
+\sup_{x \in \R} \bigl|\Prob\bigl((X - \mu)/\sigma \leq x\bigr) - \Phi(x)\bigr|
+  \;\leq\; \frac{C_0}{\sqrt{n}},
 \]
 where $C_0$ is a universal constant and $\Phi$ is the standard normal CDF.
-This is a bound on the Kolmogorov distance $d_K$.
-Since for absolutely continuous distributions the total variation distance satisfies $d_{\mathrm{TV}} \leq 2\sqrt{d_K}$ (by the Devroye--Gy\"{o}rfi inequality between variational and Kolmogorov distances for unimodal densities), we obtain
-$d_{\mathrm{TV}}(\mathrm{Beta}(\alpha,\beta), \mathcal{N}(\mu,\sigma^2)) \leq C/\sqrt{n}$
-for $C = 2\sqrt{C_0}$.
-Alternatively, direct Fourier analysis of the Beta characteristic function (which is a ratio of gamma functions) yields the sharper bound $d_{\mathrm{TV}} \leq C'/n$ for balanced $\alpha, \beta$; the $O(1/\sqrt{n})$ bound holds uniformly over all $\alpha, \beta \geq 1$ with $\alpha + \beta = n$.
+This bounds the Kolmogorov distance $d_K$.
+
+For unimodal densities, the Devroye--Gy\"{o}rfi inequality gives $d_{\mathrm{TV}} \leq 2\sqrt{d_K}$, so:
+\[
+d_{\mathrm{TV}}\!\bigl(\mathrm{Beta}(\alpha,\beta),\, \mathcal{N}(\mu,\sigma^2)\bigr)
+  \;\leq\; \frac{C}{\sqrt{n}},
+  \qquad C = 2\sqrt{C_0}.
+\]
+This bound holds uniformly over all $\alpha, \beta \geq 1$ with $\alpha + \beta = n$.
 \end{proof}
 
+\medskip
+
+% --- D.5 Positive Definiteness ---
 \begin{proposition}[Positive Definiteness of $\Sigma$]\label{prop:pd}
 Let $f_1, \ldots, f_d \in \R$ be the cluster-rank features, $\rho_{\max} \in (0,1)$, and $\ell > 0$.
-Define the $d \times d$ matrix $\Sigma$ by $\Sigma_{ij} = \rho_{\max} \cdot \exp\!\bigl(-(f_i - f_j)^2/(2\ell^2)\bigr)$ for $i \neq j$ and $\Sigma_{ii} = 1$.
-Then $\Sigma$ is positive definite.
+Define $\Sigma$ by $\Sigma_{ij} = \rho_{\max} \cdot \exp\!\bigl(-(f_i - f_j)^2/(2\ell^2)\bigr)$ for $i \neq j$ and $\Sigma_{ii} = 1$.
+Then $\Sigma$ is positive definite, with $\lambda_{\min}(\Sigma) \geq 1 - \rho_{\max} > 0$.
 \end{proposition}
 
 \begin{proof}
-Define the RBF (squared exponential) kernel $k(x, y) = \exp\!\bigl(-\|x - y\|^2/(2\ell^2)\bigr)$ for $x, y \in \R$.
-Let $K \in \R^{d \times d}$ be the Gram matrix with $K_{ij} = k(f_i, f_j)$. Since $k$ is a Mercer kernel---it is the reproducing kernel of the RKHS of smooth functions on $\R$ \citep{srinivas2010gpucb}---the matrix $K$ is positive semi-definite. Moreover, $K_{ii} = 1$ for all $i$.
-If the features $f_1, \ldots, f_d$ are not all identical, $K$ is strictly positive definite (the RBF kernel is \emph{universal}, i.e., its Gram matrix on distinct points is positive definite).
+Define the RBF kernel $k(x, y) = \exp\!\bigl(-\|x - y\|^2/(2\ell^2)\bigr)$ and let $K \in \R^{d \times d}$ be the Gram matrix $K_{ij} = k(f_i, f_j)$.
+Since $k$ is a Mercer kernel \citep{srinivas2010gpucb}, $K \succeq 0$.
+Note $K_{ii} = 1$ for all $i$.
 
-Now decompose $\Sigma$:
+\textit{Key decomposition.}\;
+We can write $\Sigma$ as a convex combination:
 \[
 \Sigma \;=\; \rho_{\max} \cdot K \;+\; (1 - \rho_{\max}) \cdot I_d.
 \]
-To verify: for $i \neq j$, $[\rho_{\max} K + (1-\rho_{\max})I]_{ij} = \rho_{\max} K_{ij} + 0 = \rho_{\max} \exp(-(f_i - f_j)^2/(2\ell^2)) = \Sigma_{ij}$. For $i = j$, $\rho_{\max} \cdot 1 + (1-\rho_{\max}) \cdot 1 = 1 = \Sigma_{ii}$.
+To verify: for $i \neq j$, $[\rho_{\max} K + (1-\rho_{\max})I]_{ij} = \rho_{\max} K_{ij} = \Sigma_{ij}$.
+For $i = j$, $\rho_{\max} + (1-\rho_{\max}) = 1 = \Sigma_{ii}$.
 
-Since $K \succeq 0$ and $I_d \succ 0$, and $\rho_{\max} \in (0,1)$, we have
+\textit{Positive definiteness.}\;
+Since $K \succeq 0$ and $\rho_{\max} \in (0,1)$:
 \[
-\Sigma = \rho_{\max} K + (1-\rho_{\max}) I_d \;\succeq\; (1-\rho_{\max}) I_d \;\succ\; 0.
+\Sigma \;=\; \rho_{\max} K + (1-\rho_{\max}) I_d
+      \;\succeq\; (1-\rho_{\max}) I_d
+      \;\succ\; 0.
 \]
-Hence $\Sigma$ is positive definite, with minimum eigenvalue at least $1 - \rho_{\max} > 0$.
-In particular, the Cholesky factorization $\Sigma = LL^\top$ exists and is unique.
+Hence $\Sigma$ is positive definite with $\lambda_{\min} \geq 1 - \rho_{\max}$, and the Cholesky factorization $\Sigma = LL^\top$ exists and is unique.
 \end{proof}
 
 \end{document}
