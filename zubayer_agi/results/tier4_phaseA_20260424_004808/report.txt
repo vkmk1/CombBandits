@@ -1,0 +1,67 @@
+====================================================================================================
+TIER 4 PHASE A — SMOKE TEST RESULTS
+====================================================================================================
+Trials: 360
+Algos: 12, Configs: 5, Models: 2, Seeds: 3
+
+--- GLOBAL RANKING (combined across models) ---
+rank algorithm                      mean  stderr   median    vs_CTS
+1    N5_corr_full_robust           239.6   25.25    198.9    +18.8% <-- BEATS
+2    N4_robust_corr                242.1   22.96    220.0    +17.9% <-- BEATS
+3    N1_corr_full                  259.1   24.33    206.9    +12.2% <-- BEATS
+4    PAPER_cal_gated               269.0   23.07    250.6     +8.8% <-- BEATS
+5    M2_corr_cts                   275.9   24.78    250.0     +6.5% <-- BEATS
+6    F2_query_design               281.4   23.75    253.9     +4.6% <-- BEATS
+7    PAPER_ts_llm                  284.0   21.88    268.9     +3.7% <-- BEATS
+8    ABLATION_random_corr          285.7   24.33    259.9     +3.2% <-- BEATS
+9    N3_info_min_fixed             285.9   21.92    279.4     +3.1% <-- BEATS
+10   CTS                           295.0   21.92    267.7     +0.0%
+11   B2_icpd                       296.0   25.49    272.4     -0.4%
+12   PAPER_jump_start              298.9   22.36    311.3     -1.3%
+
+--- PAIRED vs CTS (n=30 per algo) ---
+  algorithm                   wins losses  mean_diff  stderr  t_stat   sign_p
+  N5_corr_full_robust           24      6       55.3   15.80    3.50   0.0014 ★★
+  N4_robust_corr                24      6       52.9   11.86    4.46   0.0014 ★★
+  N1_corr_full                  24      6       35.9   19.13    1.88   0.0014 ★★
+  PAPER_cal_gated               19     11       25.9   11.21    2.31   0.2005
+  M2_corr_cts                   17     13       19.1   10.50    1.81   0.5847
+  F2_query_design               16     14       13.6   11.27    1.21   0.8555
+  PAPER_ts_llm                  18     12       11.0    9.85    1.11   0.3616
+  ABLATION_random_corr          16     14        9.3   14.33    0.65   0.8555
+  N3_info_min_fixed             18     12        9.1    9.19    0.99   0.3616
+  B2_icpd                       18     12       -1.0   16.35   -0.06   0.3616
+  PAPER_jump_start              20     10       -3.9   10.62   -0.37   0.0987
+
+====================================================================================================
+KEY ABLATION: LLM-family vs RandomCorr (no-LLM baseline)
+====================================================================================================
+If LLM algos don't beat RandomCorr, LLM is decoration.
+
+  M2_corr_cts                vs RandomCorr: 16/30 wins, diff=+9.8, p=0.8555 LLM IRRELEVANT
+  N1_corr_full               vs RandomCorr: 22/30 wins, diff=+26.6, p=0.0161 LLM HELPS ★
+  N4_robust_corr             vs RandomCorr: 24/30 wins, diff=+43.6, p=0.0014 LLM HELPS ★
+  N5_corr_full_robust        vs RandomCorr: 22/30 wins, diff=+46.0, p=0.0161 LLM HELPS ★
+
+--- LLM CALL DIAGNOSTICS (by algo, avg per trial) ---
+  N5_corr_full_robust        fresh_calls=0.0 cache_hits=1.0
+  N4_robust_corr             fresh_calls=0.0 cache_hits=1.0
+  N1_corr_full               fresh_calls=0.0 cache_hits=1.0
+  PAPER_cal_gated            fresh_calls=8.0 cache_hits=0.0
+  M2_corr_cts                fresh_calls=1.0 cache_hits=0.0
+  F2_query_design            fresh_calls=2.0 cache_hits=1.0
+  PAPER_ts_llm               fresh_calls=15.0 cache_hits=0.0
+  ABLATION_random_corr       fresh_calls=0.0 cache_hits=0.0
+  N3_info_min_fixed          fresh_calls=8.0 cache_hits=0.0
+  CTS                        fresh_calls=0.0 cache_hits=0.0
+  B2_icpd                    fresh_calls=8.0 cache_hits=0.0
+  PAPER_jump_start           fresh_calls=0.5 cache_hits=0.5
+
+====================================================================================================
+VERDICT — READY FOR FULL-SCALE TIER 4?
+====================================================================================================
+Top 3 algorithms: ['N5_corr_full_robust', 'N4_robust_corr', 'N1_corr_full']
+✓ At least one LLM algo beats RandomCorr → LLM-necessity confirmed
+
+If top 3 == [N1_corr_full, N4_robust_corr, N5_corr_full_robust] and
+llm_beats_random is True → READY to launch Tier 4 full-scale on EC2.
