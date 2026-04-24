@@ -108,12 +108,16 @@ class LLMCUCBATBaseline(CTSBase):
     name = "PAPER_llm_cucb_at"
 
     def __init__(self, d, m, oracle: GPTOracle, T_init: int = 30, K: int = 2,
-                 h_max: int = 6, **kw):
+                 h_max: int = 6, query_cooldown: int = 100, **kw):
         super().__init__(d, m, **kw)
         self.oracle = oracle
         self.T_init = T_init
         self.K = K
         self.h_max = h_max
+        self.query_cooldown = query_cooldown
+        self._last_query_t = -query_cooldown
+        self._cached_primary: list[int] = []
+        self._cached_tau: float = 0.0
 
     def select_arms(self):
         # Phase 1: round-robin
@@ -121,33 +125,43 @@ class LLMCUCBATBaseline(CTSBase):
             start = (self.t * self.m) % self.d
             return [(start + i) % self.d for i in range(self.m)]
 
-        # Phase 2: query LLM K times, compute κ, ρ, τ
-        mu = self.mu_hat.tolist()
-        picks_sets = []
-        for _ in range(self.K):
-            picks = self.oracle.query_top_m(mu)
-            picks_sets.append(set(picks[:self.m]))
-
-        # Consistency κ = |intersection| / m
-        if picks_sets:
-            intersect = picks_sets[0].copy()
-            for s in picks_sets[1:]:
-                intersect &= s
-            kappa = len(intersect) / self.m
+        # Phase 2: re-query LLM periodically (not every round — too expensive).
+        # The paper's theory allows O(sqrt(T)) queries; cooldown matches that.
+        should_requery = (self.t - self._last_query_t) >= self.query_cooldown
+        if not should_requery and self._cached_primary:
+            # Reuse cached LLM result
+            primary = self._cached_primary
+            tau = self._cached_tau
         else:
-            kappa = 0.0
+            mu = self.mu_hat.tolist()
+            picks_sets = []
+            for _ in range(self.K):
+                picks = self.oracle.query_top_m(mu)
+                picks_sets.append(set(picks[:self.m]))
 
-        primary = list(picks_sets[0]) if picks_sets else []
+            # Consistency κ = |intersection| / m
+            if picks_sets:
+                intersect = picks_sets[0].copy()
+                for s in picks_sets[1:]:
+                    intersect &= s
+                kappa = len(intersect) / self.m
+            else:
+                kappa = 0.0
 
-        # Posterior validation ρ = sum(mu[S_llm]) / max_possible
-        max_sum = sum(sorted(mu, reverse=True)[:self.m])
-        if max_sum > 0 and primary:
-            llm_sum = sum(mu[a] for a in primary)
-            rho = llm_sum / max_sum
-        else:
-            rho = 0.5
+            primary = list(picks_sets[0]) if picks_sets else []
 
-        tau = min(kappa, rho)
+            # Posterior validation ρ = sum(mu[S_llm]) / max_possible
+            max_sum = sum(sorted(mu, reverse=True)[:self.m])
+            if max_sum > 0 and primary:
+                llm_sum = sum(mu[a] for a in primary)
+                rho = llm_sum / max_sum
+            else:
+                rho = 0.5
+
+            tau = min(kappa, rho)
+            self._cached_primary = primary
+            self._cached_tau = tau
+            self._last_query_t = self.t
 
         # Hedge: add top-h UCB arms to reduced set
         h = int(self.h_max * (1 - tau))

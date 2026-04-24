@@ -57,8 +57,18 @@ def _cache_key(query_type: str, prompt: str, model: str, extra: str = "") -> str
     return h
 
 
+def _ensure_table(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS calls (
+            key TEXT PRIMARY KEY, model TEXT, query_type TEXT,
+            response TEXT, created_at REAL
+        )
+    """)
+
+
 def _cache_get(key: str) -> dict | None:
     with _cache_lock, sqlite3.connect(CACHE_DB) as con:
+        _ensure_table(con)
         row = con.execute("SELECT response FROM calls WHERE key=?", (key,)).fetchone()
         if row:
             return json.loads(row[0])
@@ -67,6 +77,7 @@ def _cache_get(key: str) -> dict | None:
 
 def _cache_put(key: str, model: str, query_type: str, response: dict):
     with _cache_lock, sqlite3.connect(CACHE_DB) as con:
+        _ensure_table(con)
         con.execute(
             "INSERT OR REPLACE INTO calls (key, model, query_type, response, created_at) VALUES (?,?,?,?,?)",
             (key, model, query_type, json.dumps(response), time.time()),
@@ -222,15 +233,16 @@ class GPTOracle:
                 pass
             return probs
 
-        # Find the first token that is a digit
+        # Find the first token that is an ASCII digit
         for tok_entry in out["logprobs"]:
             tok = tok_entry["token"].strip()
-            if tok.isdigit() or (tok.startswith("-") and tok[1:].isdigit()):
+            if (tok.isascii() and tok.isdigit()) or (
+                tok.startswith("-") and tok[1:].isascii() and tok[1:].isdigit()):
                 # This is the arm ID token - extract distribution over neighboring digit tokens
                 total_prob = 0.0
                 for candidate_tok, lp in tok_entry["top"]:
                     ct = candidate_tok.strip()
-                    if ct.isdigit():
+                    if ct.isascii() and ct.isdigit():
                         arm_id = int(ct)
                         if 0 <= arm_id < self.d:
                             p = math.exp(lp)
