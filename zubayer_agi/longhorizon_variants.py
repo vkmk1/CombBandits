@@ -90,7 +90,7 @@ class V1DecayKernel(CTSBase):
         self._built = True
 
     def _current_kernel(self):
-        # Decay: off-diagonal entries shrink by factor; diagonal stays 1
+        # Convex combination of two PSD matrices is PSD (no eigh needed).
         decay = 1.0 / (1.0 + self.t / self.tau)
         K = decay * self.Sigma_base + (1.0 - decay) * np.eye(self.d)
         return K
@@ -527,20 +527,16 @@ class V7PerArmDamping(CTSBase):
         self._built = True
 
     def _current_kernel(self):
+        # Hadamard product of two PSD matrices is PSD (Schur product theorem):
+        # damp = sqrt(f) * sqrt(f).T is rank-1 PSD; Sigma_base is PSD;
+        # therefore Sigma_base ⊙ damp_outer (diag forced to 1) is PSD.
+        # No eigh needed. ~50× faster.
         f = 1.0 / (1.0 + self.n_pulls / self.n_0)
-        # Damping factor per pair: sqrt(f_i * f_j)
-        damp = np.sqrt(f[:, None] * f[None, :])
-        Sigma = self.Sigma_base.copy()
-        # Only damp off-diagonal
-        off_mask = ~np.eye(self.d, dtype=bool)
-        Sigma[off_mask] = self.Sigma_base[off_mask] * damp[off_mask]
-        # Diagonal stays at 1
+        sqrt_f = np.sqrt(f)
+        damp = np.outer(sqrt_f, sqrt_f)
+        Sigma = self.Sigma_base * damp
         np.fill_diagonal(Sigma, 1.0)
-        # PSD ensure (cheap)
-        Sigma = 0.5 * (Sigma + Sigma.T)
-        eigvals, eigvecs = np.linalg.eigh(Sigma)
-        eigvals = np.clip(eigvals, 1e-4, None)
-        return eigvecs @ np.diag(eigvals) @ eigvecs.T
+        return Sigma
 
     def select_arms(self):
         if self.t == self.T_warmup and not self._built:

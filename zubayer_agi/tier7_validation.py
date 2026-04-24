@@ -347,6 +347,19 @@ def main():
     logger.info(f"Running {len(variant_specs)} variants x {len(configs)} configs x "
                 f"{args.n_seeds} seeds = {len(tasks)} trials (T={args.T})")
 
+    # Write meta.json at START so dashboard has totals immediately
+    with open(out_dir / "meta.json", "w") as f:
+        json.dump({
+            "T": args.T,
+            "n_seeds": args.n_seeds,
+            "n_configs": len(configs),
+            "model": MODEL,
+            "variants": variant_specs,
+            "total_trials": len(tasks),
+            "timestamp": ts,
+            "config_set": args.config_set,
+        }, f, indent=2)
+
     all_results = []
     t_start = time.time()
     raw_path = out_dir / "raw_trials.jsonl"

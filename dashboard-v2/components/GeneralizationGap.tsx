@@ -82,8 +82,8 @@ export default function GeneralizationGap({
         })}
       </div>
       <p className="mt-6 text-[10.5px] font-mono text-faint leading-relaxed">
-        Δ = mean regret of N1 minus mean regret of variant. Positive bars = variant
-        beats N1 on that split. Large positive <span className="text-bad">gap</span>{" "}
+        Δ = mean regret of CTS minus mean regret of variant. Positive bars = variant
+        beats CTS on that split. Large positive <span className="text-bad">gap</span>{" "}
         (orig − held) suggests overfitting to the configs we observed during design.
       </p>
     </div>

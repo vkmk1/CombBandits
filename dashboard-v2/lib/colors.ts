@@ -33,13 +33,17 @@ export function algoDisplay(name: string): string {
 }
 
 export function isOurs(name: string): boolean {
-  return (
-    name.startsWith("N1_") ||
-    name.startsWith("V") ||
-    name.startsWith("N4_")
-  );
+  // V-prefix variants are the new contributions being tested.
+  return name.startsWith("V");
 }
 
 export function isBaseline(name: string): boolean {
-  return name === "CTS" || name === "CUCB";
+  // CTS, CUCB, and the unmodified CorrCTS-Full / RobustCorrCTS act as baselines
+  // in the long-horizon validation experiment.
+  return (
+    name === "CTS" ||
+    name === "CUCB" ||
+    name === "N1_corr_full" ||
+    name === "N4_robust_corr"
+  );
 }

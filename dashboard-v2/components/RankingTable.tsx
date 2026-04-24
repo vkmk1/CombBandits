@@ -13,7 +13,7 @@ export default function RankingTable({ rankings }: { rankings: Ranking[] }) {
         <div className="text-right">n</div>
         <div className="text-right">Mean regret</div>
         <div className="text-right">SE</div>
-        <div className="text-right">Δ vs N1</div>
+        <div className="text-right">Δ vs CTS</div>
         <div className="text-right">Median</div>
       </div>
 

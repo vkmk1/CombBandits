@@ -79,17 +79,20 @@ def load_trials(path: Path) -> list[dict]:
 
 
 def load_summary(path: Path) -> dict:
-    f = path / "summary.json"
-    if not f.exists():
-        return {}
-    try:
-        with open(f) as fh:
-            return json.load(fh)
-    except (json.JSONDecodeError, OSError):
-        return {}
+    """Try meta.json (start) first, then summary.json (end)."""
+    for fname in ("meta.json", "summary.json"):
+        f = path / fname
+        if not f.exists():
+            continue
+        try:
+            with open(f) as fh:
+                return json.load(fh)
+        except (json.JSONDecodeError, OSError):
+            continue
+    return {}
 
 
-def compute_stats(trials: list[dict], baseline: str = "N1_corr_full") -> dict:
+def compute_stats(trials: list[dict], baseline: str = "CTS") -> dict:
     """Compute rankings, paired Wilcoxon, generalization gap, regret curves."""
     if not trials:
         return {"rankings": [], "paired": [], "curves": [], "splits": {}}
@@ -244,19 +247,26 @@ def live():
     summary = load_summary(latest)
     stats = compute_stats(trials)
 
+    # Compute total from variants × configs × seeds; fall back to summary
+    n_variants = len(summary.get("variants", []))
+    n_configs = summary.get("n_configs") or 0
+    n_seeds = summary.get("n_seeds") or 0
+    computed_total = n_variants * n_configs * n_seeds
+    total = summary.get("total_trials") or computed_total or 0
+
+    # Discover algos from trials if variants list not in meta
+    variants = summary.get("variants") or sorted({t["algo"] for t in trials})
+
     experiment = {
         "run_id": latest.name,
         "T": summary.get("T"),
-        "n_seeds": summary.get("n_seeds"),
-        "n_configs": summary.get("n_configs"),
-        "total_trials": summary.get("total_trials") or (
-            summary.get("n_seeds", 0) * summary.get("n_configs", 0) *
-            len(summary.get("variants", []))
-        ),
+        "n_seeds": n_seeds or None,
+        "n_configs": n_configs or None,
+        "total_trials": total,
         "completed_trials": len(trials),
         "started_at": summary.get("timestamp"),
         "model": summary.get("model", "gpt-5.4"),
-        "variants": summary.get("variants", []),
+        "variants": variants,
     }
     return {"experiment": experiment, "stats": stats, "updated_at": time.time()}
 

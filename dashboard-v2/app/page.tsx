@@ -64,7 +64,7 @@ export default function Page() {
             <SectionTitle
               index="03"
               label="Paired Significance"
-              sub="Wilcoxon vs N1 · Holm-Bonferroni"
+              sub="Wilcoxon vs CTS · Holm-Bonferroni"
             />
             {hasData ? (
               <SignificancePanel paired={data.stats.paired} />
@@ -80,7 +80,7 @@ export default function Page() {
               sub="original − held-out advantage"
             />
             {hasData ? (
-              <GeneralizationGap splits={data.stats.splits} baseline="N1_corr_full" />
+              <GeneralizationGap splits={data.stats.splits} baseline="CTS" />
             ) : (
               <EmptyState loading={isLoading} error={!!error} />
             )}
