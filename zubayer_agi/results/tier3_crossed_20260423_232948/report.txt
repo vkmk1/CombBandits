@@ -1,0 +1,114 @@
+====================================================================================================
+TIER 3 CROSSED EXPERIMENT — Every algo × config × model × seed
+====================================================================================================
+Total trials: 1080
+Algos: 10, Configs: 12, Models: 3, Seeds: 3
+
+--- GLOBAL RANKING (n trials each) ---
+rank algorithm                      mean  stderr   median    vs_CTS
+1    N4_robust_corr                270.1   10.21    260.9    +18.0% <-- BEATS CTS
+2    N1_corr_full                  272.5   11.20    251.0    +17.3% <-- BEATS CTS
+3    CHAMP_M2_corr_cts             300.8   10.11    283.9     +8.7% <-- BEATS CTS
+4    PAPER_cal_gated               305.5   11.49    326.8     +7.3% <-- BEATS CTS
+5    PAPER_ts_llm                  308.6    9.85    297.6     +6.3% <-- BEATS CTS
+6    OURS_B2_icpd                  315.1   12.17    329.1     +4.4% <-- BEATS CTS
+7    OURS_F2_query_design          322.3   11.52    332.7     +2.2% <-- BEATS CTS
+8    N3_info_min                   329.5    9.96    339.3     +0.0%
+9    cts_baseline                  329.5    9.96    339.3     +0.0%
+10   N2_hypo_ts                    332.2    8.56    325.3     -0.8%
+
+--- MODEL: gpt-4.1-mini ---
+rank algorithm                      mean  stderr    vs_CTS
+1    N1_corr_full                  262.3   19.30    +20.4% <-- BEATS
+2    N4_robust_corr                264.8   18.78    +19.6% <-- BEATS
+3    PAPER_cal_gated               289.7   19.53    +12.1% <-- BEATS
+4    CHAMP_M2_corr_cts             304.7   17.72     +7.5% <-- BEATS
+5    PAPER_ts_llm                  308.6   17.22     +6.3% <-- BEATS
+6    OURS_F2_query_design          320.7   19.90     +2.7% <-- BEATS
+7    OURS_B2_icpd                  325.9   22.42     +1.1% <-- BEATS
+8    N3_info_min                   329.5   17.41     +0.0%
+9    cts_baseline                  329.5   17.41     +0.0%
+10   N2_hypo_ts                    332.2   14.97     -0.8%
+
+--- MODEL: gpt-5-mini ---
+rank algorithm                      mean  stderr    vs_CTS
+1    N4_robust_corr                253.1   16.12    +23.2% <-- BEATS
+2    N1_corr_full                  282.2   22.44    +14.4% <-- BEATS
+3    CHAMP_M2_corr_cts             298.0   18.21     +9.6% <-- BEATS
+4    PAPER_ts_llm                  308.6   17.22     +6.3% <-- BEATS
+5    OURS_B2_icpd                  310.6   22.47     +5.7% <-- BEATS
+6    OURS_F2_query_design          318.1   19.52     +3.4% <-- BEATS
+7    PAPER_cal_gated               320.6   20.48     +2.7% <-- BEATS
+8    N3_info_min                   329.5   17.41     +0.0%
+9    cts_baseline                  329.5   17.41     +0.0%
+10   N2_hypo_ts                    332.2   14.97     -0.8%
+
+--- MODEL: gpt-5.4 ---
+rank algorithm                      mean  stderr    vs_CTS
+1    N1_corr_full                  272.9   16.40    +17.2% <-- BEATS
+2    N4_robust_corr                292.5   17.90    +11.2% <-- BEATS
+3    CHAMP_M2_corr_cts             299.7   17.05     +9.0% <-- BEATS
+4    PAPER_cal_gated               306.1   19.91     +7.1% <-- BEATS
+5    PAPER_ts_llm                  308.6   17.22     +6.3% <-- BEATS
+6    OURS_B2_icpd                  308.6   18.63     +6.3% <-- BEATS
+7    OURS_F2_query_design          327.9   20.94     +0.5% <-- BEATS
+8    N3_info_min                   329.5   17.41     +0.0%
+9    cts_baseline                  329.5   17.41     +0.0%
+10   N2_hypo_ts                    332.2   14.97     -0.8%
+
+--- PAIRED vs CTS (each trial: same (model, config, seed)) ---
+  algorithm                   wins losses  mean_diff  stderr  t_stat   sign_p
+  N4_robust_corr                84     24       59.4    8.50    6.98   0.0000 ★★
+  N1_corr_full                  86     22       57.0   11.04    5.17   0.0000 ★★
+  CHAMP_M2_corr_cts             80     28       28.7    9.19    3.12   0.0000 ★★
+  PAPER_cal_gated               78     30       24.0   10.46    2.30   0.0000 ★★
+  PAPER_ts_llm                  81     27       20.9    6.66    3.14   0.0000 ★★
+  OURS_B2_icpd                  67     41       14.4   13.01    1.11   0.0157 ★
+  OURS_F2_query_design          69     39        7.2   12.71    0.57   0.0050 ★★
+  N3_info_min                    0      0        0.0    0.00    0.00   0.0000
+  N2_hypo_ts                    60     48       -2.7    6.50   -0.41   0.2898
+
+--- PAIRED vs CTS (per model breakdown) ---
+
+  gpt-4.1-mini:
+  algorithm                   wins losses  mean_diff   sign_p
+  N4_robust_corr                26     10       64.7   0.0113 ★
+  N1_corr_full                  30      6       67.2   0.0001 ★★
+  CHAMP_M2_corr_cts             26     10       24.8   0.0113 ★
+  PAPER_cal_gated               27      9       39.8   0.0039 ★★
+  PAPER_ts_llm                  27      9       20.9   0.0039 ★★
+  OURS_B2_icpd                  22     14        3.6   0.2430
+  OURS_F2_query_design          24     12        8.8   0.0652
+  N3_info_min                    0      0        0.0   0.0000
+  N2_hypo_ts                    20     16       -2.7   0.6177
+
+  gpt-5-mini:
+  algorithm                   wins losses  mean_diff   sign_p
+  N4_robust_corr                33      3       76.4   0.0000 ★★
+  N1_corr_full                  27      9       47.3   0.0039 ★★
+  CHAMP_M2_corr_cts             28      8       31.5   0.0012 ★★
+  PAPER_cal_gated               25     11        8.9   0.0288 ★
+  PAPER_ts_llm                  27      9       20.9   0.0039 ★★
+  OURS_B2_icpd                  23     13       18.9   0.1325
+  OURS_F2_query_design          22     14       11.4   0.2430
+  N3_info_min                    0      0        0.0   0.0000
+  N2_hypo_ts                    20     16       -2.7   0.6177
+
+  gpt-5.4:
+  algorithm                   wins losses  mean_diff   sign_p
+  N4_robust_corr                25     11       37.0   0.0288 ★
+  N1_corr_full                  29      7       56.6   0.0003 ★★
+  CHAMP_M2_corr_cts             26     10       29.8   0.0113 ★
+  PAPER_cal_gated               26     10       23.5   0.0113 ★
+  PAPER_ts_llm                  27      9       20.9   0.0039 ★★
+  OURS_B2_icpd                  22     14       20.9   0.2430
+  OURS_F2_query_design          23     13        1.6   0.1325
+  N3_info_min                    0      0        0.0   0.0000
+  N2_hypo_ts                    20     16       -2.7   0.6177
+
+--- HEAD-TO-HEAD: CORR-CTS vs Breakthroughs (same (model,config,seed)) ---
+  challenger                  wins losses  mean_diff   sign_p
+  N1_corr_full                  83     25       28.3   0.0000 ★★ BEATS CORR
+  N2_hypo_ts                    29     79      -31.4   0.0000
+  N3_info_min                   28     80      -28.7   0.0000
+  N4_robust_corr                75     33       30.7   0.0001 ★★ BEATS CORR
