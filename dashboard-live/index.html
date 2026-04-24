@@ -469,10 +469,10 @@
   <div class="header-top">
     <div class="header-left">
       <h1>
-        CombBandits Tier 5 — Extended (T=25k)
+        CombBandits Tier 6 — Long-Horizon Variants (T=25k)
         <span class="live-badge"><span class="pulse"></span>LIVE</span>
       </h1>
-      <div class="sub" id="experiment-info">Long-horizon + RandomKernel ablation — gpt-5.4</div>
+      <div class="sub" id="experiment-info">V1-V7 variants vs N1/CTS — fixing the advantage-decay problem</div>
     </div>
     <div class="header-stats">
       <div class="header-stat">
@@ -598,21 +598,22 @@
 const DATA_URL = 'https://combbandits-results-099841456154.s3.amazonaws.com/live/results.json';
 const POLL_INTERVAL = 10000;
 
-// --- Algorithm Groups (Tier 5: N-family + baselines + ablations) ---
+// --- Algorithm Groups (Tier 6: V-variants + N1/CTS baselines) ---
 const GROUPS = {
-  baselines: ['CTS', 'CUCB'],
-  rr: ['PAPER_ts_llm', 'ABLATION_random_corr', 'ABLATION_random_kernel'],
-  cts: ['N1_corr_full', 'N4_robust_corr']
+  baselines: ['CTS'],
+  rr: ['N1_corr_full'],
+  cts: ['V1_decay_kernel', 'V2_requery_logspaced', 'V3_blend_llm_data',
+        'V4_refine_topk', 'V5_ensemble_kernels', 'V6_edge_pruning', 'V7_per_arm_damping']
 };
 
-// Head-to-head pairs for Tier 5
+// Head-to-head pairs for Tier 6
 const H2H_PAIRS = [
-  { label: 'CorrCTS vs CTS', cts: 'N1_corr_full', rr: 'CTS' },
-  { label: 'RobustCorr vs CTS', cts: 'N4_robust_corr', rr: 'CTS' },
-  { label: 'CorrCTS vs RandKernel', cts: 'N1_corr_full', rr: 'ABLATION_random_kernel' },
-  { label: 'CorrCTS vs RandCorr', cts: 'N1_corr_full', rr: 'ABLATION_random_corr' },
-  { label: 'RandKernel vs RandCorr', cts: 'ABLATION_random_kernel', rr: 'ABLATION_random_corr' },
-  { label: 'CorrCTS vs TS-LLM', cts: 'N1_corr_full', rr: 'PAPER_ts_llm' }
+  { label: 'V1 decay vs N1', cts: 'V1_decay_kernel', rr: 'N1_corr_full' },
+  { label: 'V2 requery vs N1', cts: 'V2_requery_logspaced', rr: 'N1_corr_full' },
+  { label: 'V3 blend vs N1', cts: 'V3_blend_llm_data', rr: 'N1_corr_full' },
+  { label: 'V4 refine vs N1', cts: 'V4_refine_topk', rr: 'N1_corr_full' },
+  { label: 'V6 prune vs N1', cts: 'V6_edge_pruning', rr: 'N1_corr_full' },
+  { label: 'V7 damp vs N1', cts: 'V7_per_arm_damping', rr: 'N1_corr_full' }
 ];
 
 function getGroup(agent) {

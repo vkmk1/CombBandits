@@ -120,9 +120,8 @@ TIER5_ALGOS = {
     "N4_robust_corr": BREAKTHROUGH_ALGOS["N4_robust_corr"],
     "ABLATION_random_corr": FINAL_ALGOS["ABLATION_random_corr"],
     "ABLATION_random_kernel": RandomKernelCTS,
-    "PAPER_ts_llm": PAPER_BASELINES["PAPER_ts_llm"],
 }
-NEEDS_ORACLE = {"N1_corr_full", "N4_robust_corr", "PAPER_ts_llm"}
+NEEDS_ORACLE = {"N1_corr_full", "N4_robust_corr"}
 
 
 def generate_configs() -> list[dict]:

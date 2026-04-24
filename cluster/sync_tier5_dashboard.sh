@@ -26,9 +26,17 @@ trap "rm -rf $TMPDIR" EXIT
 
 while true; do
   # Try to SCP the raw_trials.jsonl
+  # Find the latest results dir on remote, then scp its raw_trials.jsonl
+  REMOTE_DIR=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i "$KEY_PATH" \
+    "ubuntu@$IP" 'ls -td ~/zubayer_agi/results/tier6_variants_* ~/zubayer_agi/results/tier5_extended_* 2>/dev/null | head -1' 2>/dev/null)
+  [[ -z "$REMOTE_DIR" ]] && {
+    echo "[$(date '+%H:%M:%S')] No results dir found. Retrying in ${POLL_INTERVAL}s..."
+    sleep "$POLL_INTERVAL"
+    continue
+  }
   scp -o StrictHostKeyChecking=no -o ConnectTimeout=5 -q \
     -i "$KEY_PATH" \
-    "ubuntu@$IP:~/zubayer_agi/results/tier5_extended_*/raw_trials.jsonl" \
+    "ubuntu@$IP:$REMOTE_DIR/raw_trials.jsonl" \
     "$TMPDIR/raw_trials.jsonl" 2>/dev/null || {
     echo "[$(date '+%H:%M:%S')] Instance unreachable or no data yet. Retrying in ${POLL_INTERVAL}s..."
     sleep "$POLL_INTERVAL"
@@ -58,10 +66,10 @@ if not trials:
     sys.exit(0)
 
 t0 = trials[0]
-total_algos = 7
+total_algos = 9
 total_configs = 16
-total_seeds = 20
-total_trials = total_algos * total_configs * total_seeds  # 2240
+total_seeds = 10
+total_trials = total_algos * total_configs * total_seeds  # 1440
 
 # Estimate cost from LLM tokens
 total_tokens = sum(t.get("llm_tokens", 0) for t in trials)
