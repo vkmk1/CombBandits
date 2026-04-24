@@ -16,6 +16,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -39,9 +40,11 @@ app.add_middleware(
 
 
 def find_latest_run() -> Path | None:
-    """Find the most recent tier* experiment directory."""
+    """Find the most recent tier* experiment directory, excluding addons."""
+    companion_re = re.compile(r"tier\d+_(addon|b|v\d+)_")
     candidates = sorted(
-        glob.glob(str(RESULTS_DIR / "tier*_*/raw_trials.jsonl")),
+        [p for p in glob.glob(str(RESULTS_DIR / "tier*_*/raw_trials.jsonl"))
+         if not companion_re.search(Path(p).parent.name)],
         key=lambda p: os.path.getmtime(p),
         reverse=True,
     )
@@ -71,18 +74,20 @@ def find_companion_runs(latest: Path, window_sec: float = 14400) -> list[Path]:
     return companions
 
 
-_cache = {"path": None, "mtime": 0.0, "trials": [], "stamp": 0.0}
+_cache: dict[str, dict] = {}
 
 
 def load_trials(path: Path) -> list[dict]:
-    """Lazy-refresh cache from raw_trials.jsonl."""
+    """Lazy-refresh cache from raw_trials.jsonl (per-path)."""
     now = time.time()
     fpath = path / "raw_trials.jsonl"
     if not fpath.exists():
         return []
     mtime = fpath.stat().st_mtime
-    if _cache["path"] == path and _cache["mtime"] == mtime and (now - _cache["stamp"] < 2):
-        return _cache["trials"]
+    key = str(path)
+    cached = _cache.get(key)
+    if cached and cached["mtime"] == mtime and (now - cached["stamp"] < 2):
+        return cached["trials"]
     trials = []
     try:
         with open(fpath) as f:
@@ -95,8 +100,8 @@ def load_trials(path: Path) -> list[dict]:
                 except json.JSONDecodeError:
                     continue
     except OSError:
-        return _cache["trials"]
-    _cache.update({"path": path, "mtime": mtime, "trials": trials, "stamp": now})
+        return cached["trials"] if cached else []
+    _cache[key] = {"mtime": mtime, "trials": trials, "stamp": now}
     return trials
 
 
