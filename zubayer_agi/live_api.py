@@ -39,14 +39,36 @@ app.add_middleware(
 
 
 def find_latest_run() -> Path | None:
-    """Find the most recent experiment directory (tier6/7/etc.)."""
+    """Find the most recent tier* experiment directory."""
     candidates = sorted(
-        glob.glob(str(RESULTS_DIR / "tier*_*/raw_trials.jsonl"))
-        + glob.glob(str(RESULTS_DIR / "*/raw_trials.jsonl")),
+        glob.glob(str(RESULTS_DIR / "tier*_*/raw_trials.jsonl")),
         key=lambda p: os.path.getmtime(p),
         reverse=True,
     )
     return Path(candidates[0]).parent if candidates else None
+
+
+def find_companion_runs(latest: Path, window_sec: float = 14400) -> list[Path]:
+    """Find tier7_addon* / tier7b* directories modified within `window_sec`
+    of the latest tier7 run. These are treated as extensions of the same
+    experiment (additional variants run on the same (config, seed) pairs).
+    """
+    if "tier7" not in latest.name:
+        return []
+    latest_mtime = (latest / "raw_trials.jsonl").stat().st_mtime
+    companions = []
+    for pattern in ("tier7_addon_*", "tier7b_*", "tier7v*_*"):
+        for p in glob.glob(str(RESULTS_DIR / pattern / "raw_trials.jsonl")):
+            d = Path(p).parent
+            if d == latest:
+                continue
+            try:
+                mtime = Path(p).stat().st_mtime
+                if abs(mtime - latest_mtime) < window_sec:
+                    companions.append(d)
+            except OSError:
+                continue
+    return companions
 
 
 _cache = {"path": None, "mtime": 0.0, "trials": [], "stamp": 0.0}
@@ -245,6 +267,21 @@ def live():
         raise HTTPException(status_code=404, detail="No experiment runs found")
     trials = load_trials(latest)
     summary = load_summary(latest)
+
+    # Union any companion (addon) runs
+    companions = find_companion_runs(latest)
+    companion_meta = []
+    for comp in companions:
+        ctrials = load_trials(comp)
+        csum = load_summary(comp)
+        if ctrials:
+            trials = trials + ctrials
+            companion_meta.append({
+                "run_id": comp.name,
+                "variants": csum.get("variants", []),
+                "trials": len(ctrials),
+            })
+
     stats = compute_stats(trials)
 
     # Compute total from variants × configs × seeds; fall back to summary
@@ -253,9 +290,14 @@ def live():
     n_seeds = summary.get("n_seeds") or 0
     computed_total = n_variants * n_configs * n_seeds
     total = summary.get("total_trials") or computed_total or 0
+    # Add companion totals
+    for cm in companion_meta:
+        total += n_configs * n_seeds * len(cm["variants"]) if (n_configs and n_seeds) else cm["trials"]
 
     # Discover algos from trials if variants list not in meta
     variants = summary.get("variants") or sorted({t["algo"] for t in trials})
+    for cm in companion_meta:
+        variants = list(dict.fromkeys(list(variants) + cm["variants"]))
 
     experiment = {
         "run_id": latest.name,
