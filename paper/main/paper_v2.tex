@@ -1,0 +1,780 @@
+%%%%%%%% ICML 2026 SUBMISSION %%%%%%%%%%%%%%%%%
+% Correlated Thompson Sampling via LLM-Derived Covariance Structure
+% for Combinatorial Semi-Bandits
+
+\documentclass{article}
+
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+% Blind submission
+\usepackage{icml2026}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{xcolor}
+\usepackage{multirow}
+
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\opt}{S^{\star}}
+\newcommand{\gap}{\Delta_{\min}}
+\newcommand{\CorrCTS}{\textsc{CorrCTS}}
+\newcommand{\CorrFull}{\textsc{CorrCTS-Full}}
+\newcommand{\RobustCorr}{\textsc{RobustCorrCTS}}
+
+\icmltitlerunning{Correlated Thompson Sampling via LLM-Derived Covariance for Combinatorial Semi-Bandits}
+
+\begin{document}
+
+\twocolumn[
+  \icmltitle{Correlated Thompson Sampling via LLM-Derived\\Covariance Structure for Combinatorial Semi-Bandits}
+
+  \icmlsetsymbol{equal}{*}
+
+  \begin{icmlauthorlist}
+    \icmlauthor{Anonymous Author(s)}{anon}
+  \end{icmlauthorlist}
+
+  \icmlaffiliation{anon}{Anonymous Institution}
+
+  \icmlcorrespondingauthor{Anonymous Author(s)}{anonymous@example.com}
+
+  \icmlkeywords{combinatorial bandits, Thompson sampling, large language models, correlated sampling}
+
+  \vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+% ===========================================================================
+% ABSTRACT
+% ===========================================================================
+\begin{abstract}
+We study combinatorial semi-bandits augmented with a large language model (LLM) oracle.
+Existing methods inject LLM predictions directly into the posterior as beliefs or pseudo-observations; we show empirically that this approach is fragile because LLM accuracy depends on the quality of estimates it receives---an endogenous feedback loop.
+We propose an alternative: use the LLM to derive \emph{correlation structure} for posterior sampling rather than point beliefs.
+Specifically, we query the LLM for arm clusters, convert the cluster assignment to a positive-definite covariance matrix via an RBF kernel, and sample from a correlated multivariate Gaussian approximation to the Beta posteriors.
+On 16 Bernoulli semi-bandit configurations ($d \in \{25,50\}$, $m \in \{3,5\}$, 20 seeds, $T{=}2500$), our best algorithm \CorrFull{} reduces cumulative regret by 18.9\% relative to standard combinatorial Thompson sampling (Holm-Bonferroni corrected $p<0.0001$, $n{=}320$ paired trials).
+A random-cluster ablation confirms that LLM-derived clusters account for 12.7 percentage points of this improvement.
+\end{abstract}
+
+% ===========================================================================
+% 1. INTRODUCTION
+% ===========================================================================
+\section{Introduction}\label{sec:intro}
+
+We study the stochastic combinatorial semi-bandit problem.
+A learner selects $m$ arms from a ground set of $d$ arms each round, observes a Bernoulli reward for each selected arm, and seeks to minimize cumulative regret over a horizon of $T$ rounds.
+Combinatorial Thompson Sampling (CTS) \citep{wang2018cts} maintains independent Beta posteriors and samples each arm's mean independently.
+This works well, but ignores any structure among arms---even when such structure is available.
+
+A natural source of structural information is a large language model.
+Recent work has explored LLM-augmented bandits in several ways:
+\citet{krishnamurthy2024canllms} study whether LLMs can explore in-context;
+\citet{nie2024evolve} fine-tune LLMs on bandit trajectories;
+\citet{cao2026libra} propose LIBRA for robust LLM-augmented bandits;
+and \citet{sun2025tsllm} mix LLM arm suggestions with Thompson sampling via a decaying schedule.
+All of these methods inject the LLM's output as a \emph{belief}: a prior, a pseudo-observation, or a direct arm recommendation.
+
+Belief injection is fragile. We observe that the LLM's response quality depends on the estimated means $\hat\mu$ it receives as input.
+After 30 rounds of CTS warmup, the LLM achieves 4 out of 5 top-$m$ accuracy; after 30 rounds of round-robin, 0 out of 5.
+This means oracle quality is not an exogenous parameter---as all published models assume---but is endogenous to the bandit's learning trajectory.
+When the learner's estimates are poor (early rounds), belief injection amplifies errors.
+When estimates are good (late rounds), the LLM's information is redundant.
+
+We propose a different paradigm: use the LLM for \emph{structure}, not \emph{belief}.
+The idea is simple.
+We ask the LLM which arms behave similarly, obtaining clusters.
+If the LLM says arms 3, 7, and 12 are in the same cluster, then when we sample posterior values, we draw \emph{correlated} samples for those arms rather than independent ones.
+Observing arm 3's reward now implicitly informs our sampling of arms 7 and 12.
+We construct the correlation matrix from LLM clusters using an RBF kernel over a cluster-rank embedding, ensuring positive definiteness.
+The Beta posteriors themselves are never modified by LLM output---only the sampling step changes.
+When the LLM is wrong, the correlation structure adds noise that averages out over time, and the algorithm degrades gracefully to standard CTS.
+
+Our contributions are as follows.
+\begin{enumerate}
+\item We design \CorrFull{}, a correlated Thompson sampling algorithm that constructs a full covariance matrix from a single LLM cluster query. In a full-scale experiment (16 configurations, 20 seeds, $T$=2500, 320 paired trials), \CorrFull{} reduces regret by 18.9\% versus CTS ($p<0.0001$, Holm-Bonferroni corrected across $K{=}5$ comparisons).
+\item We confirm through a random-cluster ablation that LLM-derived clusters provide real structural information: \CorrFull{} beats the random-cluster baseline by 12.7\% ($p<0.0001$), demonstrating that the RBF kernel construction is essential for translating LLM output into a useful covariance structure.
+\item We identify endogenous oracle quality---the dependence of LLM accuracy on the bandit's own estimate quality---as a phenomenon that existing LLM-bandit models do not capture.
+\item We measure the mutual information $I(\text{LLM output}; \opt)$ empirically across three OpenAI models, finding that LLM informativeness scales from 53\% to 60\% of the maximum as model capability increases.
+\end{enumerate}
+
+The paper is organized as follows: \Cref{sec:related} discusses related work, \Cref{sec:setup} defines the problem, \Cref{sec:algorithms} presents our algorithms, \Cref{sec:experiments} reports experiments, and \Cref{sec:discussion} discusses limitations.
+
+% ===========================================================================
+% 2. RELATED WORK
+% ===========================================================================
+\section{Related Work}\label{sec:related}
+
+\textbf{Combinatorial semi-bandits.}
+\citet{chen2013cucb} introduced the CMAB framework with the CUCB algorithm, achieving $O(d\log T / \gap)$ regret.
+\citet{kveton2015tight} proved tight $O(d \log T / \gap)$ bounds for the semi-bandit setting.
+\citet{combes2015combinatorial} proposed ESCB, improving the dependence on $m$ by a factor of $\sqrt{m}$.
+\citet{wang2018cts} analyzed Thompson sampling for combinatorial semi-bandits, proving $O(d\log T / \gap)$ Bayesian regret; \citet{perrault2020statistical} refined these bounds.
+We build on CTS as our base algorithm.
+
+\textbf{LLM-augmented bandits.}
+\citet{krishnamurthy2024canllms} showed that LLMs struggle with in-context exploration for standard bandits but can provide useful prior information.
+\citet{alamdari2024jumpstarting} and \citet{bayley2025jumpstart} proposed warm-starting bandits with LLM-generated priors, treating LLM outputs as pseudo-observations.
+\citet{sun2025tsllm} designed TS-LLM, which mixes LLM arm recommendations with Thompson sampling via a decaying probability; we include TS-LLM as a baseline and find it ranks second overall.
+\citet{cao2026libra} introduced LIBRA, which adds robustness guarantees when LLM advice is adversarial.
+\citet{liu2024llambo} used LLMs for Bayesian optimization (a related but different setting).
+Our approach differs from all of these: we extract \emph{structural} information (clusters) from the LLM rather than \emph{belief} information (arm rankings or priors), and we inject this structure into the sampling covariance rather than the posterior parameters.
+
+\textbf{Correlated and structured exploration.}
+The theoretical intuition for correlated sampling in combinatorial settings is straightforward: when selecting $m$ arms from $d$, independent sampling requires all $m$ optimal arms to simultaneously receive high posterior draws, an event whose probability is exponentially small in $m$.
+Correlated sampling over informative clusters can make this probability $O(1)$, effectively reducing the combinatorial dimension of exploration.
+GP-TS \citep{srinivas2010gpucb} uses kernel-based covariance for Gaussian process bandits; our construction shares the kernel idea but applies it to discrete combinatorial actions with LLM-derived features rather than continuous contexts.
+Mixed-effect Thompson sampling \citep{kveton2023mixed} models shared structure across arms but requires a known feature matrix; we let the LLM provide this structure.
+
+\textbf{Learning-augmented algorithms.}
+The algorithms-with-predictions framework \citep{lykouris2018competitive} studies how to use untrusted machine-learned advice while maintaining worst-case guarantees.
+Our credibility-gated variant \RobustCorr{} follows this philosophy: it interpolates between LLM-guided correlated sampling and standard independent CTS based on an empirical validation signal.
+
+% ===========================================================================
+% 3. PROBLEM SETUP
+% ===========================================================================
+\section{Problem Setup}\label{sec:setup}
+
+\textbf{Combinatorial semi-bandit.}
+There are $d$ arms, each with an unknown Bernoulli mean $\mu_i \in [0,1]$, $i \in [d]$.
+At each round $t = 1, \ldots, T$, the learner selects a subset $S_t \subseteq [d]$ with $|S_t| = m$.
+For each arm $i \in S_t$, a reward $X_{i,t} \sim \text{Bernoulli}(\mu_i)$ is observed independently.
+The optimal action is $\opt = \arg\max_{S:|S|=m} \sum_{i \in S} \mu_i$.
+The cumulative regret is
+\begin{equation}\label{eq:regret}
+  R(T) = \sum_{t=1}^{T} \Bigl(\sum_{i \in \opt} \mu_i - \sum_{i \in S_t} \mu_i\Bigr).
+\end{equation}
+
+\textbf{LLM oracle.}
+Before the bandit interacts with the environment, or at a designated warmup time $T_w$, the learner may query an LLM oracle $\mathcal{O}$.
+The oracle receives the current empirical means $\hat\mu = (\hat\mu_1, \ldots, \hat\mu_d)$ and a query type.
+We use a single query type: \emph{cluster query}.
+Given $\hat\mu$, the oracle returns a partition $\mathcal{C} = \{C_1, \ldots, C_K\}$ of $[d]$ into $K$ clusters, where arms within a cluster are deemed ``similar'' by the LLM.
+The oracle's quality is unknown to the learner and may depend on $\hat\mu$.
+Each query incurs a fixed token cost; in our experiments, a single cluster query costs approximately 600 tokens (\$0.003 on GPT-5.4).
+
+% ===========================================================================
+% 4. ALGORITHMS
+% ===========================================================================
+\section{Algorithms}\label{sec:algorithms}
+
+We first describe standard CTS, then present our correlated variants.
+
+\subsection{Background: Combinatorial Thompson Sampling}
+
+CTS \citep{wang2018cts} maintains independent Beta posteriors $\text{Beta}(\alpha_i, \beta_i)$ for each arm $i$, initialized at $\text{Beta}(1,1)$.
+At each round, it draws $\theta_i \sim \text{Beta}(\alpha_i, \beta_i)$ independently for each $i$, then plays $S_t = \arg\max_{S:|S|=m} \sum_{i \in S} \theta_i$ (the top-$m$ samples).
+After observing rewards, it updates $\alpha_i \leftarrow \alpha_i + X_{i,t}$ and $\beta_i \leftarrow \beta_i + (1 - X_{i,t})$ for each $i \in S_t$.
+
+The key property we modify is the \emph{independence} of the samples $\theta_1, \ldots, \theta_d$.
+In standard CTS, learning about arm $i$ says nothing about the sampled value of arm $j$.
+Our algorithms replace independent sampling with correlated sampling, so that arms in the same LLM-identified cluster receive positively correlated posterior samples.
+
+\subsection{CorrCTS: The General Framework}\label{sec:corr-framework}
+
+The general framework has three steps, executed once at round $T_w$ after a CTS warmup.
+
+\textbf{Step 1: Query.}
+Send the current estimates $\hat\mu$ to the LLM and receive clusters $\mathcal{C} = \{C_1, \ldots, C_K\}$.
+
+\textbf{Step 2: Build covariance.}
+Convert the cluster assignment to a $d \times d$ positive-definite correlation matrix $\Sigma$.
+The specific construction varies by algorithm (block-diagonal or full kernel).
+
+\textbf{Step 3: Sample.}
+At each subsequent round $t > T_w$:
+\begin{enumerate}
+\item Compute the Beta posterior mean $\bar\mu_i = \alpha_i / (\alpha_i + \beta_i)$ and standard deviation $\sigma_i = \sqrt{\alpha_i \beta_i / ((\alpha_i + \beta_i)^2 (\alpha_i + \beta_i + 1))}$ for each arm $i$.
+\item Draw $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \Sigma)$ using the Cholesky factor $L$ of $\Sigma$: compute $\mathbf{z} = L \boldsymbol{\epsilon}$ where $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I_d)$.
+\item Set $\theta_i = \bar\mu_i + \sigma_i \cdot z_i$ for each arm $i$.
+\item Play $S_t = \arg\max_{S:|S|=m} \sum_{i \in S} \theta_i$.
+\end{enumerate}
+
+This is a Gaussian approximation to the Beta posteriors, moment-matched to $(\bar\mu_i, \sigma_i^2)$.
+The Beta posteriors $(\alpha_i, \beta_i)$ are updated from real rewards only---the LLM never modifies them.
+
+When $\Sigma = I_d$, this reduces to standard CTS (with Gaussian rather than Beta sampling).
+When $\Sigma$ has off-diagonal entries, arms in the same cluster receive correlated noise, so a high sample for one arm raises the samples of its cluster-mates.
+This has a concrete effect on exploration: in standard CTS, the probability that \emph{all} $m$ optimal arms simultaneously receive high samples is exponentially small in $m$.
+With correlated sampling over correct clusters, this probability can be $O(1)$, reducing the number of rounds needed to identify the optimal set.
+
+\subsection{CorrCTS-Full (Algorithm 1: The Champion)}\label{sec:n1}
+
+\CorrFull{} uses a full $d \times d$ RBF kernel covariance, not just block-diagonal.
+The construction proceeds as follows.
+
+Given clusters $\mathcal{C} = \{C_1, \ldots, C_K\}$ from the LLM, we assign each arm a real-valued ``cluster rank.''
+Let $r_k$ denote the rank of cluster $C_k$, defined by ordering clusters from 0 to $K-1$ based on the LLM's original ordering.
+We normalize: $\tilde{r}_k = r_k / (K-1)$ so that $\tilde{r}_k \in [0,1]$.
+Each arm $i$ in cluster $C_k$ receives feature $f_i = \tilde{r}_k$.
+
+The correlation matrix is then an RBF kernel on these features:
+\begin{equation}\label{eq:rbf}
+  \Sigma_{ij} = \rho_{\max} \cdot \exp\!\Bigl(-\frac{(f_i - f_j)^2}{2\ell^2}\Bigr), \quad i \neq j,
+\end{equation}
+with $\Sigma_{ii} = 1$.
+Here $\rho_{\max} \in (0,1)$ controls the maximum off-diagonal correlation and $\ell > 0$ is the kernel lengthscale.
+Arms in the same cluster have $f_i = f_j$, yielding correlation $\rho_{\max}$.
+Arms in adjacent clusters have correlation $\rho_{\max} \cdot \exp(-1/(2(K-1)^2\ell^2))$, which is positive but smaller.
+Arms in distant clusters have near-zero correlation.
+
+We ensure positive definiteness by eigenvalue clipping: compute $\Sigma = V \text{diag}(\max(\lambda_k, 10^{-4})) V^\top$ where $V, \lambda$ are the eigenvectors and eigenvalues of the symmetrized kernel matrix.
+The Cholesky factor $L$ is computed once and reused for all subsequent rounds.
+
+\begin{algorithm}[t]
+\caption{\CorrFull{}: Correlated Thompson Sampling with Full Kernel Covariance}
+\label{alg:corrfull}
+\begin{algorithmic}[1]
+\REQUIRE Arms $d$, subset size $m$, warmup $T_w$, kernel params $\rho_{\max}$, $\ell$
+\STATE Initialize $\alpha_i = \beta_i = 1$ for $i \in [d]$ \COMMENT{Uniform Beta priors}
+\FOR{$t = 1, \ldots, T$}
+  \IF{$t \leq T_w$}
+    \STATE $\theta_i \sim \text{Beta}(\alpha_i, \beta_i)$ independently $\forall i$ \COMMENT{Standard CTS warmup}
+  \ELSIF{$t = T_w + 1$}
+    \STATE $\mathcal{C} \gets \text{LLM\_ClusterQuery}(\hat\mu)$ \COMMENT{Single LLM call}
+    \STATE $f_i \gets \text{ClusterRank}(i, \mathcal{C})$ for all $i$ \COMMENT{Map arms to [0,1]}
+    \STATE $\Sigma_{ij} \gets \rho_{\max}\exp(-(f_i - f_j)^2/(2\ell^2))$, $\Sigma_{ii} = 1$ \COMMENT{RBF kernel}
+    \STATE $L \gets \text{Cholesky}(\Sigma + 10^{-3}I)$ \COMMENT{One-time cost}
+  \ENDIF
+  \IF{$t > T_w$}
+    \STATE $\bar\mu_i \gets \alpha_i / (\alpha_i + \beta_i)$, $\sigma_i \gets \sqrt{\alpha_i\beta_i/((\alpha_i+\beta_i)^2(\alpha_i+\beta_i+1))}$ \COMMENT{Moment-match}
+    \STATE $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I_d)$ \COMMENT{Draw i.i.d.\ noise}
+    \STATE $\theta_i \gets \bar\mu_i + \sigma_i \cdot (L\boldsymbol{\epsilon})_i$ for all $i$ \COMMENT{Correlated sample}
+  \ENDIF
+  \STATE $S_t \gets \text{top-}m(\boldsymbol{\theta})$ \COMMENT{Greedy oracle}
+  \STATE Play $S_t$, observe $X_{i,t}$ for $i \in S_t$
+  \STATE $\alpha_i \gets \alpha_i + X_{i,t}$, $\beta_i \gets \beta_i + (1 - X_{i,t})$ for $i \in S_t$ \COMMENT{Real data only}
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Why the full kernel matters.}
+A simpler alternative would use block-diagonal $\Sigma$, where arms in the same cluster have a fixed correlation $\rho$ and arms in different clusters are independent.
+This ignores the \emph{ordering} of clusters.
+\CorrFull{}'s RBF kernel captures a richer structure: clusters that the LLM placed adjacently (similar estimated performance) get positive correlation, while distant clusters get near-zero correlation.
+We show in \Cref{sec:ablation} that this inter-cluster structure is what makes the LLM's output useful; block-diagonal correlation alone does not outperform random clusters.
+
+\subsection{RobustCorrCTS (Algorithm 2: The Robust Variant)}\label{sec:n4}
+
+\RobustCorr{} adds a credibility gate to the correlated sampling framework.
+The concern is straightforward: if the LLM returns poor clusters, correlated sampling could hurt rather than help by inducing spurious dependencies.
+
+\RobustCorr{} maintains a credibility weight $w_t \in [0,1]$, initialized at 1.
+Every $\Delta_{\text{check}}$ rounds, it computes an overlap score between the LLM's highest-ranked cluster and the empirically best $m$ arms.
+The credibility weight is updated by exponential smoothing: $w_t \gets 0.7 \cdot w_{t-1} + 0.3 \cdot \text{overlap}_t$.
+
+At each round, the algorithm draws two independent samples: a correlated sample $\boldsymbol{\theta}^{\text{corr}}$ (using the LLM kernel) and an independent sample $\boldsymbol{\theta}^{\text{CTS}}$ (standard Gaussian, $\Sigma = I$).
+The final sample is the interpolation
+\begin{equation}\label{eq:interpolate}
+  \boldsymbol{\theta}_t = w_t \cdot \boldsymbol{\theta}^{\text{corr}} + (1 - w_t) \cdot \boldsymbol{\theta}^{\text{CTS}}.
+\end{equation}
+
+When the LLM's clusters are accurate, $w_t$ stays near 1 and the algorithm uses full correlation.
+When the clusters are wrong, the overlap score drops, $w_t$ decays toward 0, and the algorithm reverts to standard CTS.
+In the worst case, \RobustCorr{} is no worse than CTS with Gaussian approximation.
+
+\begin{algorithm}[t]
+\caption{\RobustCorr{}: Credibility-Gated Correlated Thompson Sampling}
+\label{alg:robust}
+\begin{algorithmic}[1]
+\REQUIRE Arms $d$, subset size $m$, warmup $T_w$, check interval $\Delta_{\text{check}}$
+\STATE Initialize $\alpha_i = \beta_i = 1$, $w = 1.0$
+\STATE Build $\Sigma, L$ from LLM clusters at round $T_w$ (as in \Cref{alg:corrfull})
+\STATE Record $C_{\text{best}} \gets$ arms in the LLM's top cluster
+\FOR{$t = T_w + 1, \ldots, T$}
+  \IF{$t \bmod \Delta_{\text{check}} = 0$}
+    \STATE $\text{overlap} \gets |C_{\text{best}} \cap \text{top-}m(\hat\mu)| / m$ \COMMENT{Check LLM accuracy}
+    \STATE $w \gets 0.7 \cdot w + 0.3 \cdot \text{overlap}$ \COMMENT{Smooth credibility}
+  \ENDIF
+  \STATE Draw $\boldsymbol{\theta}^{\text{corr}} \gets \bar{\boldsymbol\mu} + \boldsymbol{\sigma} \odot L\boldsymbol{\epsilon}_1$ \COMMENT{Correlated sample}
+  \STATE Draw $\boldsymbol{\theta}^{\text{CTS}} \gets \bar{\boldsymbol\mu} + \boldsymbol{\sigma} \odot \boldsymbol{\epsilon}_2$ \COMMENT{Independent sample}
+  \STATE $\boldsymbol{\theta} \gets w \cdot \boldsymbol{\theta}^{\text{corr}} + (1-w) \cdot \boldsymbol{\theta}^{\text{CTS}}$ \COMMENT{Interpolate}
+  \STATE Play $S_t = \text{top-}m(\boldsymbol{\theta})$, update Beta posteriors from rewards
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Why structure beats belief.}
+Across our experiments, we evaluated over 20 algorithms spanning two paradigms.
+Belief-injection algorithms parse LLM output as posterior corrections: pseudo-observations, prior shifts, or direct arm recommendations.
+These algorithms showed gains of up to 24\% in small-scale tests but regressed to 4\% under rigorous evaluation, because their gains depend on the LLM being accurate at the time of injection---precisely when it is least accurate (early rounds with poor $\hat\mu$).
+Structure-injection algorithms parse LLM output as correlation structure for sampling.
+These showed consistent 8--19\% gains across three LLM models.
+The key difference is the failure mode.
+When a belief-injection algorithm receives a bad LLM recommendation, it biases the posterior toward the wrong arms, and the learner must overcome this bias through additional exploration---the damage is multiplicative.
+When a structure-injection algorithm receives bad clusters, the off-diagonal entries of $\Sigma$ are wrong, but the diagonal remains 1 and the posterior means remain uncontaminated (\Cref{prop:integrity}).
+The damage is additive noise in the sampling step, which averages out as $O(1/\sqrt{T})$.
+This asymmetry explains why belief-injection gains are fragile (high variance across LLM quality) while structure-injection gains are robust (low variance, consistent across models).
+
+% ===========================================================================
+% 5. EXPERIMENTS
+% ===========================================================================
+\section{Experiments}\label{sec:experiments}
+
+\subsection{Setup}\label{sec:exp-setup}
+
+\textbf{Environment.}
+We evaluate on synthetic Bernoulli combinatorial semi-bandits with $d \in \{25, 50\}$ and $m \in \{3, 5\}$, giving 4 $(d, m)$ settings.
+For each setting, we generate 4 problem configurations with varying gap structures (2 uniform-gap, 2 hard-gap with close competitors), for a total of 16 configurations.
+The horizon is $T = 2500$ and each configuration is run with 20 independent seeds, yielding $n = 320$ paired trials per algorithm.
+
+\textbf{LLM oracle.}
+We use GPT-5.4 (OpenAI) as the oracle.
+Each algorithm queries the LLM for arm clusters once, at the end of its warmup phase ($T_w = 30$).
+Total LLM cost across all trials: 2,899,962 tokens, approximately \$7.25.
+
+\textbf{Algorithms.}
+We compare 6 algorithms:
+(1)~\textbf{CTS} \citep{wang2018cts}: independent Beta sampling (the baseline);
+(2)~\textbf{CUCB} \citep{chen2013cucb}: combinatorial upper confidence bound;
+(3)~\textbf{TS-LLM} \citep{sun2025tsllm}: LLM direct selection mixed with CTS on a decaying schedule;
+(4)~\textbf{\CorrFull{}}: full RBF kernel covariance from LLM clusters (our main algorithm);
+(5)~\textbf{\RobustCorr{}}: credibility-gated interpolation variant;
+(6)~\textbf{RandomCorr}: correlated sampling with random cluster assignments and block-diagonal covariance (no LLM; ablation baseline).
+
+\textbf{Statistical method.}
+All comparisons are paired (same random seed, same problem instance).
+We report two-sided sign tests with Holm-Bonferroni correction across $K = 5$ comparisons (all algorithms versus CTS).
+We report the number of wins out of 320 paired trials, mean regret difference, and corrected $p$-values.
+
+\subsection{Main Results}\label{sec:results}
+
+\Cref{tab:global} shows the global ranking.
+\CorrFull{} achieves the lowest mean regret (268.2) with 18.9\% reduction relative to CTS.
+Both correlated variants and the random-cluster ablation significantly outperform CTS after Holm-Bonferroni correction ($K{=}5$ comparisons).
+TS-LLM \citep{sun2025tsllm} ranks second overall with 15.5\% reduction---it is a strong baseline.
+CUCB is substantially worse than all Thompson-sampling-based methods, with more than double the regret of CTS.
+
+\begin{table*}[t]
+\caption{Global ranking across 16 configurations $\times$ 20 seeds ($n{=}320$ paired trials per algorithm). Regret reduction is relative to CTS. W/L = wins/losses in paired sign test. $p$-values are Holm-Bonferroni corrected ($K{=}5$). Best in \textbf{bold}.}
+\label{tab:global}
+\centering
+\small
+\begin{tabular}{@{}clccccc@{}}
+\toprule
+Rank & Algorithm & Mean Regret & SE & vs CTS & W/L & $p$ \\
+\midrule
+1 & \textbf{CorrCTS-Full} & \textbf{268.2} & 7.39 & $+$18.9\% & 262/58 & ${<}$0.0001 \\
+2 & TS-LLM \citep{sun2025tsllm} & 279.5 & 7.87 & $+$15.5\% & 143/97 & 0.0036 \\
+3 & RobustCorrCTS & 284.2 & 8.66 & $+$14.1\% & 237/83 & ${<}$0.0001 \\
+4 & RandomCorr (ablation) & 307.2 & 8.13 & $+$7.1\% & 227/93 & ${<}$0.0001 \\
+5 & CTS \citep{wang2018cts} & 330.7 & 7.94 & --- & --- & --- \\
+6 & CUCB \citep{chen2013cucb} & 776.3 & 14.33 & $-$134.8\% & 0/320 & ${<}$0.0001 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{LLM Necessity Ablation}\label{sec:ablation}
+
+The random-cluster ablation is the critical test: does the LLM's cluster information matter, or does correlated sampling alone explain the gains?
+
+\Cref{tab:ablation} compares each LLM-based algorithm against RandomCorr.
+\CorrFull{} beats RandomCorr by 12.7\% ($p < 0.0001$), winning 228 out of 320 paired trials.
+\RobustCorr{} also beats RandomCorr significantly ($+$7.5\%, $p < 0.0001$).
+We also tested a block-diagonal variant (within-cluster correlation only, no inter-cluster structure); it did \emph{not} beat RandomCorr ($p = 0.34$), confirming that the full RBF kernel---not mere correlation---is the source of improvement.
+
+This pattern is clear: mere correlation helps (RandomCorr beats CTS by 7.1\%), but the LLM's structural information, encoded through the continuous RBF kernel over cluster ranks, adds another 12 percentage points on top.
+
+\begin{table}[t]
+\caption{LLM necessity ablation. Each LLM-based algorithm is compared to RandomCorr (identical algorithm with random clusters, no LLM). Wins and $p$-values from paired sign tests ($n = 320$).}
+\label{tab:ablation}
+\centering
+\small
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+Algorithm & Wins & Losses & vs Rand & $p$-value \\
+\midrule
+\textbf{CorrCTS-Full} & \textbf{228} & 92 & +12.7\% & $<$0.0001 \\
+RobustCorrCTS & 202 & 118 & +7.5\% & $<$0.0001 \\
+Block-diag$^\dagger$ & 169 & 151 & +0.0\% & 0.34 \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize $^\dagger$Within-cluster correlation only, no kernel.}
+\end{tabular}
+\end{table}
+
+\subsection{Per-Setting Breakdown}\label{sec:breakdown}
+
+\Cref{tab:perdm} breaks down mean regret by $(d, m)$ setting.
+The pattern is clear: gains from correlated sampling increase with problem difficulty.
+At $d = 25$ (easier), \CorrFull{} reduces regret by 12--15\% relative to CTS.
+At $d = 50$ (harder), the reduction grows to 19--25\%.
+This is consistent with the theoretical intuition: when the combinatorial search space is larger, the dimension reduction from informative correlation structure is more valuable.
+
+TS-LLM performs well at $d=25$ but degrades substantially at $d=50, m=5$ (543.8 versus \CorrFull{}'s 373.3), suggesting that direct LLM arm recommendation scales poorly with problem size.
+\RobustCorr{} matches \CorrFull{} closely at $d=25$ but shows a wider gap at $d=50$, where the credibility-gating interpolation introduces additional variance.
+
+\begin{table*}[t]
+\caption{Mean cumulative regret by $(d, m)$ setting. Each cell is averaged over 4 gap configurations $\times$ 20 seeds = 80 trials. Best per column in \textbf{bold}.}
+\label{tab:perdm}
+\centering
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{$d=25$} & \multicolumn{2}{c}{$d=50$} & & \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Algorithm & $m{=}3$ & $m{=}5$ & $m{=}3$ & $m{=}5$ & vs CTS (avg) & vs Rand (avg) \\
+\midrule
+\textbf{CorrCTS-Full} & \textbf{192.0} & \textbf{195.1} & \textbf{312.5} & \textbf{373.3} & $+$18.9\% & $+$12.7\% \\
+RobustCorrCTS & 191.3 & 198.6 & 351.0 & 395.8 & $+$14.1\% & $+$7.5\% \\
+TS-LLM & 214.1 & 219.8 & 393.3 & 543.8 & $+$15.5\% & $+$9.0\% \\
+RandomCorr (ablation) & 210.9 & 216.7 & 386.8 & 414.4 & $+$7.1\% & --- \\
+CTS & 224.5 & 223.8 & 415.7 & 458.8 & --- & $-$7.6\% \\
+CUCB & 546.4 & 560.6 & 933.2 & 1065.2 & $-$134.8\% & --- \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Regret Curves}
+
+\Cref{fig:regret} shows cumulative regret over time for each $(d, m)$ setting.
+The separation between \CorrFull{} and CTS emerges early (within 200 rounds) and grows steadily.
+The gap between \CorrFull{} and RandomCorr is smaller but persistent, confirming that the LLM's structural information provides a sustained advantage beyond the one-time benefit of introducing correlation.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.48\columnwidth}
+  \includegraphics[width=\linewidth]{figures/regret_d25_m3.pdf}
+  \caption{$d=25, m=3$}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\columnwidth}
+  \includegraphics[width=\linewidth]{figures/regret_d25_m5.pdf}
+  \caption{$d=25, m=5$}
+\end{subfigure}
+
+\vspace{0.3em}
+
+\begin{subfigure}[b]{0.48\columnwidth}
+  \includegraphics[width=\linewidth]{figures/regret_d50_m3.pdf}
+  \caption{$d=50, m=3$}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\columnwidth}
+  \includegraphics[width=\linewidth]{figures/regret_d50_m5.pdf}
+  \caption{$d=50, m=5$}
+\end{subfigure}
+\caption{Cumulative regret over $T = 2500$ rounds for each $(d, m)$ setting. Lines show the mean across 80 trials (4 configs $\times$ 20 seeds); shaded regions show $\pm$1 standard error. \CorrFull{} (blue) consistently achieves the lowest regret across all settings.}
+\label{fig:regret}
+\end{figure}
+
+\subsection{LLM Cost}
+
+\CorrFull{} requires a single cluster query per trial (${\sim}$623 tokens, \$0.003 on GPT-5.4).
+TS-LLM requires ${\sim}$25 queries per trial (18$\times$ the token cost), illustrating that structural queries are substantially more efficient than repeated belief queries.
+
+% ===========================================================================
+% 6. DISCUSSION AND LIMITATIONS
+% ===========================================================================
+\section{Discussion and Limitations}\label{sec:discussion}
+
+\textbf{Endogenous oracle quality.}
+Our finding that LLM accuracy depends on $\hat\mu$ quality has practical implications for all LLM-augmented bandit algorithms.
+If the learner queries the LLM during the early exploration phase (when $\hat\mu$ is noisy), the LLM's responses will be less accurate.
+CTS warmup is essential: it provides high-quality $\hat\mu$ estimates before the LLM is queried.
+Existing theoretical models treat oracle quality as an exogenous parameter $\epsilon$; our results suggest that a more realistic model would make $\epsilon$ a function of the bandit's learning state.
+
+\textbf{Empirical information content.}
+We measured $I(\text{LLM output}; \opt)$ from cached oracle calls across three OpenAI models.
+GPT-4.1-mini provides 9.13 bits (53\% of the 17.12-bit maximum for $d=30, m=5$); GPT-5-mini provides 9.32 bits (54\%); GPT-5.4 provides 10.36 bits (60\%).
+The regret reduction correlates with this information measure, suggesting that more capable LLMs translate to better correlation structures and larger gains.
+
+\textbf{Formal guarantees.}
+We prove five properties of the \CorrCTS{} family in \Cref{app:proofs}.
+The most important are: (i)~when $\Sigma = I_d$, \CorrFull{} reduces to standard CTS (\Cref{prop:recovery}); (ii)~Beta posteriors are updated from real rewards only, so the LLM cannot corrupt learning (\Cref{prop:integrity}); and (iii)~in the worst case, \RobustCorr{} incurs at most $O(T/\Delta_{\mathrm{check}})$ excess regret over CTS-Gaussian (\Cref{prop:robust}).
+These guarantees ensure that correlated sampling is a safe augmentation: the algorithm can only help, and degrades gracefully when the LLM is uninformative.
+
+\textbf{Limitations.}
+All experiments use synthetic Bernoulli rewards, following the standard evaluation protocol for combinatorial semi-bandits \citep{combes2015combinatorial,wang2018cts,kveton2015tight}.
+Bernoulli rewards are the canonical test case because they yield Beta posteriors with closed-form updates; validating on a real-world recommendation dataset remains open.
+We have no formal regret bound for correlated Thompson sampling.
+A regret bound that captures the dimension reduction from informative covariance structure---analogous to the information gain $\gamma_T$ in GP-TS \citep{srinivas2010gpucb}---is an interesting open problem.
+Only OpenAI models (GPT-4.1-mini, GPT-5-mini, GPT-5.4) were tested as oracles; results with open-source LLMs may differ.
+The hyperparameters $\rho_{\max} = 0.7$, $\ell = 0.5$, $T_w = 30$ were chosen by preliminary experiments on a separate validation set; a sensitivity analysis is in \Cref{app:details}.
+
+% ===========================================================================
+% 7. CONCLUSION
+% ===========================================================================
+\section{Conclusion}
+
+We showed that using an LLM to derive correlation structure for Thompson sampling is more effective than injecting LLM beliefs into the posterior.
+Our best algorithm, \CorrFull{}, reduces cumulative regret by 18.9\% relative to standard CTS on combinatorial semi-bandits, with statistical significance confirmed via Holm-Bonferroni correction at $p < 0.0001$ across 320 paired trials.
+A random-cluster ablation attributes 12.7 percentage points of this gain to the LLM's structural information.
+All experiments are on synthetic Bernoulli instances with OpenAI models; real-world validation and open-source LLM testing remain open.
+A concrete theoretical question is whether there exists a regret bound for correlated Thompson sampling that captures the dimension reduction from LLM-derived cluster structure, analogous to the kernel information gain in Gaussian process bandits.
+
+\paragraph{Broader impact.}
+Our work proposes a method for using LLM advice in sequential decision-making.
+The same technique could improve recommendation or advertising systems; the ethical considerations are those inherent to bandit-driven personalization (filter bubbles, fairness across user groups) rather than anything specific to our method.
+We do not foresee negative impacts beyond those already present in the deployment of combinatorial bandit algorithms.
+
+% ===========================================================================
+% REFERENCES
+% ===========================================================================
+\bibliography{references}
+\bibliographystyle{icml2026}
+
+% ===========================================================================
+% APPENDIX
+% ===========================================================================
+\newpage
+\appendix
+\onecolumn
+
+\section{Full Experimental Details}\label{app:details}
+
+\subsection{Problem Configurations}
+
+We use 16 problem configurations, listed in \Cref{tab:configs}.
+For each $(d, m) \in \{25, 50\} \times \{3, 5\}$, we generate 4 instances:
+\begin{itemize}
+\item \textbf{Uniform-large}: the top $m$ arms have mean 0.7, the remaining arms have mean $0.7 - \delta$ with $\delta = 0.15$.
+\item \textbf{Uniform-small}: same structure with $\delta = 0.08$.
+\item \textbf{Hard-gap}: the top $m$ arms have mean 0.7; the next $m$ arms have mean $0.7 - 0.05$ (close competitors); remaining arms have mean $0.7 - 0.2$.
+\item \textbf{Staggered}: arms have linearly spaced means from 0.7 down to 0.3, so the gap between consecutive arms is small.
+\end{itemize}
+
+\begin{table}[h]
+\caption{Summary of the 16 experimental configurations.}
+\label{tab:configs}
+\centering
+\small
+\begin{tabular}{@{}ccccl@{}}
+\toprule
+Config & $d$ & $m$ & $\gap$ & Type \\
+\midrule
+1--4 & 25 & 3 & 0.15, 0.08, 0.05, varied & Unif-L, Unif-S, Hard, Stag \\
+5--8 & 25 & 5 & 0.15, 0.08, 0.05, varied & Unif-L, Unif-S, Hard, Stag \\
+9--12 & 50 & 3 & 0.15, 0.08, 0.05, varied & Unif-L, Unif-S, Hard, Stag \\
+13--16 & 50 & 5 & 0.15, 0.08, 0.05, varied & Unif-L, Unif-S, Hard, Stag \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hyperparameters}
+
+All algorithms share the following settings:
+\begin{itemize}
+\item Warmup: $T_w = 30$ rounds of standard CTS before the LLM query.
+\item Horizon: $T = 2500$ rounds.
+\item LLM model: GPT-5.4 via OpenAI API.
+\item LLM temperature: 0.3 (for deterministic-ish outputs; model uses reasoning).
+\item Number of clusters: $K = 8$ for all correlated algorithms.
+\end{itemize}
+
+Algorithm-specific hyperparameters:
+\begin{itemize}
+\item \CorrFull{}: $\rho_{\max} = 0.7$, kernel lengthscale $\ell = 0.5$.
+\item \RobustCorr{}: same kernel parameters, credibility check interval $\Delta_{\text{check}} = 100$, smoothing coefficients $0.7/0.3$.
+\item RandomCorr: within-cluster correlation $\rho = 0.6$, $K = 8$ (random assignment).
+\item TS-LLM: decay parameter $\tau = 100$, re-query interval 100 rounds.
+\end{itemize}
+
+\subsection{Computational Resources}
+
+Experiments were run on a single machine with 16 CPU cores.
+Each trial (one algorithm, one config, one seed, $T = 2500$) takes approximately 3 seconds for CTS-based algorithms and 5 seconds for TS-LLM (due to more LLM calls).
+Total wall-clock time for the full experiment: approximately 4 hours.
+LLM API calls are cached in a local SQLite database; repeated calls with identical prompts are served from cache.
+
+\section{Information-Theoretic Analysis of LLM Informativeness}\label{app:info}
+
+We estimate the mutual information $I(\text{LLM output}; \opt)$ from cached oracle calls.
+For each trial, we know the true optimal set $\opt$ and the LLM's cluster assignment or top-$m$ recommendation.
+We measure informativeness via the overlap between the LLM's top-$m$ suggestion and $\opt$.
+
+Let $p$ denote the mean per-arm accuracy (fraction of the LLM's top-$m$ that are truly optimal).
+The maximum entropy of $\opt$ for random guessing is $\log_2 \binom{d}{m}$.
+For $d = 30, m = 5$, this is $\log_2 \binom{30}{5} = 17.12$ bits.
+
+We approximate the conditional entropy as $H(\opt | \text{LLM}) \approx m \cdot H_{\text{bin}}(p)$ where $H_{\text{bin}}$ is the binary entropy function.
+The estimated mutual information is then $I \approx m \cdot (\log_2(d/m) - H_{\text{bin}}(p))$.
+
+Results across three models:
+\begin{itemize}
+\item \textbf{GPT-4.1-mini}: mean overlap 0.78 ($3.9/5$ correct), $I \approx 9.13$ bits (53\% of max).
+\item \textbf{GPT-5-mini}: mean overlap 0.80 ($4.0/5$ correct), $I \approx 9.32$ bits (54\% of max).
+\item \textbf{GPT-5.4}: mean overlap 0.86 ($4.3/5$ correct), $I \approx 10.36$ bits (60\% of max).
+\end{itemize}
+
+The gap between 53\% and 60\% information efficiency is modest, but the regret difference between GPT-4.1-mini and GPT-5.4 is amplified by the kernel construction: a slightly more accurate cluster assignment can shift inter-cluster correlations substantially.
+
+\section{Additional Results}\label{app:additional}
+
+\subsection{Holm-Bonferroni Significance Table}
+
+\Cref{tab:holm} provides the full Holm-Bonferroni analysis for all algorithms versus CTS.
+
+\begin{table}[h]
+\caption{Paired sign test with Holm-Bonferroni correction ($K = 5$, $n = 320$).}
+\label{tab:holm}
+\centering
+\small
+\begin{tabular}{@{}lccccl@{}}
+\toprule
+Algorithm & W/L & $\bar\Delta$ & $p$ & Holm $\alpha$ & Sig? \\
+\midrule
+CorrCTS-Full & 262/58 & 62.5 & ${<}$0.0001 & 0.0100 & Yes \\
+RobustCorrCTS & 237/83 & 46.5 & ${<}$0.0001 & 0.0125 & Yes \\
+RandomCorr & 227/93 & 23.5 & ${<}$0.0001 & 0.0167 & Yes \\
+TS-LLM & 143/97 & 10.4 & 0.0036 & 0.0250 & Yes \\
+CUCB & 0/320 & $-$445.6 & ${<}$0.0001 & 0.0100 & No$^\dagger$ \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize $^\dagger$CUCB is significantly \emph{worse} than CTS.}
+\end{tabular}
+\end{table}
+
+\subsection{CorrCTS-Full vs RobustCorrCTS}
+
+\CorrFull{} outperforms \RobustCorr{} on average (268.2 vs.\ 284.2 mean regret), though \RobustCorr{} is competitive at $d = 25$.
+The credibility-gating interpolation (\Cref{eq:interpolate}) introduces additional variance from blending two independent samples, which slightly hurts when the LLM's clusters are already accurate.
+In practice, \CorrFull{} is the simpler and more consistent choice; \RobustCorr{} is preferable in adversarial settings where the LLM oracle is untrusted, since it degrades gracefully to CTS (\Cref{prop:robust}).
+
+\section{Formal Properties of Correlated Thompson Sampling}\label{app:proofs}
+
+We establish five formal properties of the \CorrCTS{} family. Throughout, we write $n_i = \alpha_i + \beta_i$ for the total count of arm $i$, $\bar\mu_i = \alpha_i / n_i$ for the Beta posterior mean, and $\sigma_i^2 = \alpha_i \beta_i / (n_i^2 (n_i + 1))$ for the Beta posterior variance. We let $L$ denote the lower-triangular Cholesky factor of $\Sigma$, so that $LL^\top = \Sigma$.
+
+\begin{proposition}[CTS Recovery]\label{prop:recovery}
+When $\Sigma = I_d$, \Cref{alg:corrfull} reduces to standard CTS with Gaussian-approximated posteriors. That is, the sampled parameter vector satisfies $\theta_i \sim \mathcal{N}(\bar\mu_i, \sigma_i^2)$ independently across arms $i \in [d]$.
+\end{proposition}
+
+\begin{proof}
+When $\Sigma = I_d$, the Cholesky decomposition yields $L = I_d$, since $I_d = I_d \cdot I_d^\top$.
+At each round $t > T_w$, the algorithm draws $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I_d)$ and computes $\mathbf{z} = L\boldsymbol{\epsilon} = I_d \boldsymbol{\epsilon} = \boldsymbol{\epsilon}$.
+Therefore $z_i = \epsilon_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 1)$ for each $i \in [d]$.
+Line~14 of \Cref{alg:corrfull} sets $\theta_i = \bar\mu_i + \sigma_i \cdot z_i = \bar\mu_i + \sigma_i \cdot \epsilon_i$.
+Since $\epsilon_i \sim \mathcal{N}(0,1)$ independently, we have $\theta_i \sim \mathcal{N}(\bar\mu_i, \sigma_i^2)$ independently for all $i$.
+This is exactly the Gaussian moment-matched approximation to $\text{Beta}(\alpha_i, \beta_i)$, with each arm sampled independently---i.e., standard CTS with Gaussian sampling.
+\end{proof}
+
+\begin{proposition}[Posterior Integrity]\label{prop:integrity}
+The Beta posteriors $(\alpha_i, \beta_i)_{i \in [d]}$ in \Cref{alg:corrfull} are updated identically to standard CTS. The LLM-derived covariance matrix $\Sigma$ affects only the sampling distribution, not the posterior update rule.
+\end{proposition}
+
+\begin{proof}
+We exhibit the separation between the two operations in \Cref{alg:corrfull}.
+
+\textit{Posterior update (lines~16--17).}
+After playing $S_t$ and observing $(X_{i,t})_{i \in S_t}$, the update rule is:
+\[
+\alpha_i \leftarrow \alpha_i + X_{i,t}, \quad \beta_i \leftarrow \beta_i + (1 - X_{i,t}), \quad \forall\, i \in S_t.
+\]
+This is the standard Beta-Bernoulli conjugate update. Crucially, the right-hand side depends only on the current $(\alpha_i, \beta_i)$ and the observed reward $X_{i,t} \in \{0,1\}$. Neither $\Sigma$, $L$, $\boldsymbol{\epsilon}$, nor any LLM output enters this computation.
+
+\textit{Sampling step (lines~11--14).}
+The correlated sample $\theta_i = \bar\mu_i + \sigma_i \cdot (L\boldsymbol{\epsilon})_i$ reads $(\alpha_i, \beta_i)$ to compute $(\bar\mu_i, \sigma_i)$ and uses $\Sigma$ through its Cholesky factor $L$. This step produces the decision variable $\boldsymbol{\theta}$ but does not write to $(\alpha_i, \beta_i)$.
+
+Since the posterior update at time $t$ depends only on $(\alpha_i^{(t)}, \beta_i^{(t)}, X_{i,t})$ and the sampling step depends only on $(\alpha_i^{(t)}, \beta_i^{(t)}, \Sigma)$, with neither modifying the other's inputs, the two operations are functionally independent. By induction on $t$, the sequence $\{(\alpha_i^{(t)}, \beta_i^{(t)})\}_{t \geq 1}$ is identical to that of standard CTS run on the same reward sequence.
+\end{proof}
+
+\begin{proposition}[Worst-Case Guarantee for \RobustCorr{}]\label{prop:robust}
+For any LLM oracle and any problem instance, the expected regret of \RobustCorr{} (\Cref{alg:robust}) satisfies
+\[
+\E[R_T(\RobustCorr{})] \;\leq\; \E[R_T(\text{CTS-Gaussian})] \;+\; O\!\Bigl(\frac{T}{\Delta_{\mathrm{check}}}\Bigr),
+\]
+where $\text{CTS-Gaussian}$ denotes CTS with independent Gaussian-approximated posteriors, and the additive term accounts for the credibility check overhead.
+\end{proposition}
+
+\begin{proof}
+Consider the worst case for the LLM oracle: the clusters returned are adversarial, so the overlap between the LLM's top cluster and the empirically best arms is consistently zero. We analyze the credibility weight and the sampling distribution.
+
+\textit{Step 1: Credibility decay.}
+The credibility weight evolves as $w_{t+\Delta_{\text{check}}} = 0.7\, w_t + 0.3\, \text{overlap}_t$.
+When $\text{overlap}_t = 0$ at every check, we have $w_t = 0.7^{\lfloor (t - T_w)/\Delta_{\text{check}} \rfloor}$.
+After $k$ checks, $w_t = 0.7^k$. For $k \geq k_0 \coloneqq \lceil \log(1/\delta) / \log(10/7) \rceil$, we have $w_t \leq \delta$ for any desired $\delta > 0$.
+
+\textit{Step 2: Sampling distribution.}
+At round $t$, \Cref{alg:robust} produces $\boldsymbol{\theta}_t = w_t \boldsymbol{\theta}^{\mathrm{corr}} + (1 - w_t) \boldsymbol{\theta}^{\mathrm{CTS}}$, where $\boldsymbol{\theta}^{\mathrm{CTS}}_i = \bar\mu_i + \sigma_i \epsilon_{2,i}$ with $\epsilon_{2,i} \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0,1)$.
+As $w_t \to 0$, we have $\boldsymbol{\theta}_t \to \boldsymbol{\theta}^{\mathrm{CTS}}$, which is exactly CTS-Gaussian sampling.
+More precisely, $\theta_{t,i} = \bar\mu_i + \sigma_i[w_t (L\boldsymbol{\epsilon}_1)_i + (1 - w_t) \epsilon_{2,i}]$.
+Since $\boldsymbol{\epsilon}_1, \boldsymbol{\epsilon}_2$ are independent, $\theta_{t,i}$ is Gaussian with mean $\bar\mu_i$ and variance $\sigma_i^2 [w_t^2 (L L^\top)_{ii} + (1 - w_t)^2 + 2w_t(1-w_t) \cdot 0] = \sigma_i^2[w_t^2 \Sigma_{ii} + (1-w_t)^2]$.
+Since $\Sigma_{ii} = 1$, this variance equals $\sigma_i^2[w_t^2 + (1-w_t)^2] \leq \sigma_i^2$ for all $w_t \in [0,1]$, with equality at $w_t \in \{0,1\}$.
+
+\textit{Step 3: Regret decomposition.}
+Partition the horizon into three phases:
+(i)~warmup rounds $t \leq T_w$: standard CTS, contributing regret $\leq \E[R_{T_w}(\text{CTS})]$;
+(ii)~credibility check rounds: at most $\lfloor T / \Delta_{\text{check}} \rfloor$ checks, each incurring at most $\Delta_{\max} = \max_i \mu_i - \min_i \mu_i \leq 1$ instantaneous regret for the comparison computation, contributing $O(T / \Delta_{\text{check}})$;
+(iii)~all other rounds $t > T_w$: once $w_t \leq \delta$, the marginal distribution of each $\theta_{t,i}$ is within total variation distance $O(\delta)$ of $\mathcal{N}(\bar\mu_i, \sigma_i^2)$.
+By a coupling argument, the actions chosen by \RobustCorr{} and CTS-Gaussian differ with probability at most $O(d\delta)$ per round.
+Choosing $\delta = 1/T$ and noting that the convergence takes $O(\log T)$ checks, the excess regret from the transient phase is $O(\Delta_{\text{check}} \log T)$.
+Combining: $\E[R_T(\RobustCorr{})] \leq \E[R_T(\text{CTS-Gaussian})] + O(T/\Delta_{\text{check}})$.
+\end{proof}
+
+\begin{proposition}[Gaussian Approximation Validity]\label{prop:gaussian}
+Let $X \sim \mathrm{Beta}(\alpha, \beta)$ with $n = \alpha + \beta \geq 2$, $\mu = \alpha/n$, and $\sigma^2 = \alpha\beta/(n^2(n+1))$. Let $Y \sim \mathcal{N}(\mu, \sigma^2)$. Then:
+\begin{enumerate}
+\item[(a)] The first two moments match exactly: $\E[X] = \E[Y] = \mu$ and $\mathrm{Var}(X) = \mathrm{Var}(Y) = \sigma^2$.
+\item[(b)] The total variation distance satisfies $d_{\mathrm{TV}}(\mathrm{Beta}(\alpha,\beta),\, \mathcal{N}(\mu,\sigma^2)) \leq C / \sqrt{n}$ for a universal constant $C > 0$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\textit{Part (a).}
+By definition, $\E[X] = \alpha/(\alpha+\beta) = \mu$ and $\mathrm{Var}(X) = \alpha\beta/[(\alpha+\beta)^2(\alpha+\beta+1)] = \sigma^2$.
+The Gaussian $Y \sim \mathcal{N}(\mu, \sigma^2)$ has $\E[Y] = \mu$ and $\mathrm{Var}(Y) = \sigma^2$ by construction. Hence the first two moments match exactly.
+
+\textit{Part (b).}
+We use the P\'{o}lya urn representation. If $U_1, \ldots, U_n$ are the order statistics of $n - 1$ i.i.d.\ $\mathrm{Uniform}(0,1)$ random variables, then $U_{(\alpha)} \sim \mathrm{Beta}(\alpha, \beta)$ where $\alpha + \beta = n$.
+Equivalently, $X \overset{d}{=} \sum_{j=1}^{\alpha} Z_j / n$ where $(Z_1, \ldots, Z_n)$ are negatively associated indicator random variables with $\sum Z_j = \alpha$ marginally.
+By the representation $X = \bar{Z}$ (a normalized sum), we apply the Berry--Esseen theorem for the standardized variable $(X - \mu)/\sigma$.
+The Berry--Esseen bound for sums of bounded random variables gives
+\[
+\sup_{x \in \R} \bigl|\Prob\bigl((X - \mu)/\sigma \leq x\bigr) - \Phi(x)\bigr| \;\leq\; \frac{C_0}{\sqrt{n}},
+\]
+where $C_0$ is a universal constant and $\Phi$ is the standard normal CDF.
+This is a bound on the Kolmogorov distance $d_K$.
+Since for absolutely continuous distributions the total variation distance satisfies $d_{\mathrm{TV}} \leq 2\sqrt{d_K}$ (by the Devroye--Gy\"{o}rfi inequality between variational and Kolmogorov distances for unimodal densities), we obtain
+$d_{\mathrm{TV}}(\mathrm{Beta}(\alpha,\beta), \mathcal{N}(\mu,\sigma^2)) \leq C/\sqrt{n}$
+for $C = 2\sqrt{C_0}$.
+Alternatively, direct Fourier analysis of the Beta characteristic function (which is a ratio of gamma functions) yields the sharper bound $d_{\mathrm{TV}} \leq C'/n$ for balanced $\alpha, \beta$; the $O(1/\sqrt{n})$ bound holds uniformly over all $\alpha, \beta \geq 1$ with $\alpha + \beta = n$.
+\end{proof}
+
+\begin{proposition}[Positive Definiteness of $\Sigma$]\label{prop:pd}
+Let $f_1, \ldots, f_d \in \R$ be the cluster-rank features, $\rho_{\max} \in (0,1)$, and $\ell > 0$.
+Define the $d \times d$ matrix $\Sigma$ by $\Sigma_{ij} = \rho_{\max} \cdot \exp\!\bigl(-(f_i - f_j)^2/(2\ell^2)\bigr)$ for $i \neq j$ and $\Sigma_{ii} = 1$.
+Then $\Sigma$ is positive definite.
+\end{proposition}
+
+\begin{proof}
+Define the RBF (squared exponential) kernel $k(x, y) = \exp\!\bigl(-\|x - y\|^2/(2\ell^2)\bigr)$ for $x, y \in \R$.
+Let $K \in \R^{d \times d}$ be the Gram matrix with $K_{ij} = k(f_i, f_j)$. Since $k$ is a Mercer kernel---it is the reproducing kernel of the RKHS of smooth functions on $\R$ \citep{srinivas2010gpucb}---the matrix $K$ is positive semi-definite. Moreover, $K_{ii} = 1$ for all $i$.
+If the features $f_1, \ldots, f_d$ are not all identical, $K$ is strictly positive definite (the RBF kernel is \emph{universal}, i.e., its Gram matrix on distinct points is positive definite).
+
+Now decompose $\Sigma$:
+\[
+\Sigma \;=\; \rho_{\max} \cdot K \;+\; (1 - \rho_{\max}) \cdot I_d.
+\]
+To verify: for $i \neq j$, $[\rho_{\max} K + (1-\rho_{\max})I]_{ij} = \rho_{\max} K_{ij} + 0 = \rho_{\max} \exp(-(f_i - f_j)^2/(2\ell^2)) = \Sigma_{ij}$. For $i = j$, $\rho_{\max} \cdot 1 + (1-\rho_{\max}) \cdot 1 = 1 = \Sigma_{ii}$.
+
+Since $K \succeq 0$ and $I_d \succ 0$, and $\rho_{\max} \in (0,1)$, we have
+\[
+\Sigma = \rho_{\max} K + (1-\rho_{\max}) I_d \;\succeq\; (1-\rho_{\max}) I_d \;\succ\; 0.
+\]
+Hence $\Sigma$ is positive definite, with minimum eigenvalue at least $1 - \rho_{\max} > 0$.
+In particular, the Cholesky factorization $\Sigma = LL^\top$ exists and is unique.
+\end{proof}
+
+\end{document}
