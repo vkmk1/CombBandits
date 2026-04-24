@@ -622,24 +622,30 @@ The fraction of arms in the LLM's highest-ranked cluster that are truly in $\opt
 \end{enumerate}
 
 \textbf{Results.}
-We compute both metrics from cached oracle calls across three OpenAI models, averaging over all 16 configurations:
+We compute NMI from all 1{,}280 cluster calls in the Tier~4 experiment (GPT-5.4, $T = 2{,}500$, 16 configurations $\times$ 20 seeds $\times$ 4 algorithms), broken down by problem size:
 
 \begin{center}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-Model & NMI & Top-cluster prec. & Mean regret \\
+Setting & LLM NMI & Random NMI & $\Delta$NMI & CorrCTS-Full regret \\
 \midrule
-GPT-4.1-mini & 0.41 & 0.78 & 287.4 \\
-GPT-5-mini   & 0.44 & 0.80 & 281.9 \\
-GPT-5.4      & 0.52 & 0.86 & 268.2 \\
+$d\!=\!25, m\!=\!3$ & 0.18 $\pm$ 0.004 & 0.10 & +0.08 & 192.0 \\
+$d\!=\!25, m\!=\!5$ & 0.23 $\pm$ 0.005 & 0.10 & +0.13 & 195.1 \\
+$d\!=\!50, m\!=\!3$ & 0.09 $\pm$ 0.002 & 0.10 & $-$0.01 & 312.5 \\
+$d\!=\!50, m\!=\!5$ & 0.12 $\pm$ 0.003 & 0.10 & +0.02 & 373.3 \\
+\midrule
+Overall & 0.155 $\pm$ 0.002 & 0.10 & +0.055 & 268.2 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The NMI increase from 0.41 to 0.52 (27\% relative) accompanies a regret reduction from 287.4 to 268.2 (6.7\% relative).
-The relationship is monotone but the sample size ($n = 3$ models) is too small for statistical claims about scaling.
-The key observation is that even moderate cluster quality (NMI $\approx 0.4$) produces meaningful regret reduction relative to random clusters (NMI $\approx 0.05$), suggesting that the RBF kernel construction amplifies weak structural signals.
+The NMI values are strikingly low: LLM clusters achieve only NMI $\approx 0.16$ on average, barely exceeding the random baseline of $\approx 0.10$.
+At $d = 50, m = 3$, the LLM clusters are \emph{indistinguishable from random} in NMI terms.
+Yet \CorrFull{} achieves 18.9\% regret reduction over CTS across all settings, and \emph{still} beats RandomCorr by 12.7\% (paired sign test $p < 0.0001$).
+
+This reveals that the source of \CorrFull{}'s advantage is primarily the \emph{structural inductive bias} of the RBF kernel construction---converting any partition into smooth pairwise correlations---rather than the accuracy of the LLM's clusters per se.
+The LLM's contribution is ordering clusters by quality rank, which determines the kernel's correlation decay structure; even a noisy ordering produces a kernel that captures more problem structure than independent sampling.
 
 \section{Additional Results}\label{app:additional}
 

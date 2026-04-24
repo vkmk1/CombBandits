@@ -469,10 +469,10 @@
   <div class="header-top">
     <div class="header-left">
       <h1>
-        CombBandits Tier 4 — Full Scale
+        CombBandits Tier 5 — Extended (T=25k)
         <span class="live-badge"><span class="pulse"></span>LIVE</span>
       </h1>
-      <div class="sub" id="experiment-info">N-family vs CTS/CUCB/RandomCorr — gpt-5.4 flagship model</div>
+      <div class="sub" id="experiment-info">Long-horizon + RandomKernel ablation — gpt-5.4</div>
     </div>
     <div class="header-stats">
       <div class="header-stat">
@@ -509,9 +509,9 @@
     </div>
     <div class="card-desc">Algorithms ranked by mean final regret. Aggregated across all completed seeds and configs.</div>
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-cts);"></div> CTS Warmup (ours)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-rr);"></div> Round-Robin Warmup</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-base);"></div> Baselines</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-cts);"></div> Ours (CorrCTS family)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-rr);"></div> Ablations &amp; TS-LLM</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grp-base);"></div> Baselines (CTS, CUCB)</div>
     </div>
     <div class="table-wrap" style="max-height: 520px; overflow-y: auto;">
       <table id="ranking-table">
@@ -549,9 +549,9 @@
     <!-- SECTION 3: Head-to-Head -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title"><span class="section-num">3</span> Head-to-Head: CTS vs RR Warmup</div>
+        <div class="card-title"><span class="section-num">3</span> Head-to-Head Comparisons</div>
       </div>
-      <div class="card-desc">Paired comparison of CTS-warmup vs Round-Robin warmup variants. Green = CTS wins.</div>
+      <div class="card-desc">Key algorithm pairs. Green = first algorithm wins (lower regret = better). Includes RandomKernel ablation.</div>
       <div class="chart-wrap"><canvas id="ch-h2h"></canvas></div>
     </div>
 
@@ -598,19 +598,21 @@
 const DATA_URL = 'https://combbandits-results-099841456154.s3.amazonaws.com/live/results.json';
 const POLL_INTERVAL = 10000;
 
-// --- Algorithm Groups (Tier 4: N-family + baselines + ablation) ---
+// --- Algorithm Groups (Tier 5: N-family + baselines + ablations) ---
 const GROUPS = {
   baselines: ['CTS', 'CUCB'],
-  rr: ['PAPER_ts_llm', 'ABLATION_random_corr', 'M2_corr_cts'],
-  cts: ['N1_corr_full', 'N4_robust_corr', 'N5_corr_full_robust']
+  rr: ['PAPER_ts_llm', 'ABLATION_random_corr', 'ABLATION_random_kernel'],
+  cts: ['N1_corr_full', 'N4_robust_corr']
 };
 
-// Head-to-head pairs for Tier 4: novel vs baseline/ablation
+// Head-to-head pairs for Tier 5
 const H2H_PAIRS = [
-  { label: 'N1 vs CTS', cts: 'N1_corr_full', rr: 'CTS' },
-  { label: 'N4 vs CTS', cts: 'N4_robust_corr', rr: 'CTS' },
-  { label: 'N5 vs CTS', cts: 'N5_corr_full_robust', rr: 'CTS' },
-  { label: 'N4 vs RandCorr', cts: 'N4_robust_corr', rr: 'ABLATION_random_corr' }
+  { label: 'CorrCTS vs CTS', cts: 'N1_corr_full', rr: 'CTS' },
+  { label: 'RobustCorr vs CTS', cts: 'N4_robust_corr', rr: 'CTS' },
+  { label: 'CorrCTS vs RandKernel', cts: 'N1_corr_full', rr: 'ABLATION_random_kernel' },
+  { label: 'CorrCTS vs RandCorr', cts: 'N1_corr_full', rr: 'ABLATION_random_corr' },
+  { label: 'RandKernel vs RandCorr', cts: 'ABLATION_random_kernel', rr: 'ABLATION_random_corr' },
+  { label: 'CorrCTS vs TS-LLM', cts: 'N1_corr_full', rr: 'PAPER_ts_llm' }
 ];
 
 function getGroup(agent) {
@@ -820,7 +822,7 @@ function renderHeader(exp, nResults) {
   document.getElementById('progress-count').textContent =
     `${exp.completed || nResults} / ${exp.total_trials} trials (${pct.toFixed(1)}%)`;
   document.getElementById('experiment-info').textContent =
-    `d=${exp.d}, m=${exp.m}, T=${exp.T} | ${exp.n_configs} configs x ${exp.n_seeds} seeds`;
+    `d=${exp.d}, m=${exp.m}, T=${exp.T} | ${exp.n_configs || '?'} configs x ${exp.n_seeds || '?'} seeds | 7 algos (incl. RandomKernel)`;
   document.getElementById('foot-d').textContent = exp.d;
   document.getElementById('foot-m').textContent = exp.m;
   document.getElementById('foot-T').textContent = exp.T;
