@@ -1,0 +1,74 @@
+====================================================================================================
+BULLETPROOF EXPERIMENT: 3 Winners + 4 Paper Baselines vs CTS
+====================================================================================================
+Trials per algo: 16
+Configs: 4 | Seeds per config: 4
+T: 1500
+
+--- OVERALL RANKING (lower regret = better) ---
+rank algorithm                        mean  stderr   median    vs_CTS
+1    OURS_B2_icpd                    213.3   34.78    173.0    +16.6% <-- BEATS CTS
+2    PAPER_calibration_gated         214.0   23.90    196.5    +16.4% <-- BEATS CTS
+3    SAFE_S5_mixin                   221.7   14.09    207.6    +13.3% <-- BEATS CTS
+4    PAPER_llm_jump_start            227.2   11.59    210.1    +11.2% <-- BEATS CTS
+5    SAFE_S3_reversible              235.6   13.59    219.0     +7.9% <-- BEATS CTS
+6    PAPER_ts_llm                    237.0   21.55    213.4     +7.4% <-- BEATS CTS
+7    SAFE_S6_masterpiece             245.1   18.41    225.8     +4.2% <-- BEATS CTS
+8    SAFE_S4_gated_elim              246.4   27.50    198.0     +3.7% <-- BEATS CTS
+9    OURS_A1_logprob                 248.0   21.55    227.0     +3.1% <-- BEATS CTS
+10   SAFE_S2_bounded_budget          249.4   13.47    230.4     +2.5% <-- BEATS CTS
+11   cts_baseline                    255.8   19.13    232.3     +0.0%
+12   SAFE_S1_optimistic_only         257.4   20.69    226.9     -0.6%
+13   OURS_F2_query_design            299.3   43.63    258.9    -17.0%
+
+--- PAIRED COMPARISON vs CTS (every algo on same (config, seed) as CTS) ---
+algorithm                       wins  losses   mean_diff  stderr  t_stat  wilcoxon_p
+OURS_B2_icpd                      13       3        42.6   39.39    1.08      0.0213
+PAPER_calibration_gated           12       4        41.8   27.14    1.54      0.0768
+SAFE_S5_mixin                     10       6        34.2   11.93    2.86      0.4545
+PAPER_llm_jump_start              11       5        28.7   15.07    1.90      0.2101
+SAFE_S3_reversible                 9       7        20.2   18.52    1.09      0.8036
+PAPER_ts_llm                       9       7        18.9   26.07    0.72      0.8036
+SAFE_S6_masterpiece               10       6        10.7   20.42    0.52      0.4545
+SAFE_S4_gated_elim                11       5         9.4   27.69    0.34      0.2101
+OURS_A1_logprob                    9       7         7.9   21.88    0.36      0.8036
+SAFE_S2_bounded_budget             7       9         6.4   15.42    0.41      0.8036
+SAFE_S1_optimistic_only            8       8        -1.6   17.95   -0.09      1.1964
+OURS_F2_query_design              10       6       -43.5   52.92   -0.82      0.4545
+
+--- PER-CONFIG MEAN REGRET ---
+algorithm                        cfg_0     cfg_1     cfg_2     cfg_3
+OURS_B2_icpd                     146.4     110.6     259.7     336.4
+PAPER_calibration_gated          201.0     160.9     286.1     208.0
+SAFE_S5_mixin                    193.1     178.0     305.0     210.6
+PAPER_llm_jump_start             217.4     194.2     291.2     206.0
+SAFE_S3_reversible               202.3     189.6     283.9     266.8
+PAPER_ts_llm                     187.2     175.7     304.2     280.8
+SAFE_S6_masterpiece              246.8     180.7     330.4     222.6
+SAFE_S4_gated_elim               215.4     157.3     317.3     295.6
+OURS_A1_logprob                  262.5     158.1     337.0     234.3
+SAFE_S2_bounded_budget           228.5     215.3     325.1     228.9
+cts_baseline                     214.9     234.7     359.5     214.2
+SAFE_S1_optimistic_only          206.9     259.8     312.8     250.2
+OURS_F2_query_design             250.7     253.6     272.9     420.1
+
+--- WIN COUNT (lowest regret in (config, seed)) ---
+  PAPER_calibration_gated     5/16
+  OURS_B2_icpd                5/16
+  OURS_F2_query_design        2/16
+  PAPER_ts_llm                2/16
+  SAFE_S3_reversible          1/16
+  SAFE_S4_gated_elim          1/16
+
+--- LLM COST (per trial average) ---
+  OURS_B2_icpd                calls=8.0  tokens=5948
+  PAPER_calibration_gated     calls=8.0  tokens=9227
+  SAFE_S5_mixin               calls=14.5  tokens=6146
+  SAFE_S3_reversible          calls=1.0  tokens=424
+  PAPER_ts_llm                calls=15.0  tokens=6358
+  SAFE_S6_masterpiece         calls=9.0  tokens=3813
+  SAFE_S4_gated_elim          calls=1.0  tokens=444
+  OURS_A1_logprob             calls=1.0  tokens=395
+  SAFE_S2_bounded_budget      calls=10.0  tokens=4236
+  SAFE_S1_optimistic_only     calls=1.0  tokens=424
+  OURS_F2_query_design        calls=3.0  tokens=2031

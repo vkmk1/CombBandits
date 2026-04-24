@@ -1,11 +1,7 @@
-"""Iteration 2: 6 Safe-CTS variants + original winners + CTS + paper baselines.
+"""Final experiment: masterpieces (M1-M4) vs best candidates (B2, F2, Cal-Gated) vs CTS.
 
-Uses the EXISTING CACHE (with 801 cached LLM responses) wherever possible.
-For novel algorithms that make new query types not in cache, falls through to
-fresh API calls (small number, ~$0.10 max).
-
-Same 4 configs × 4 seeds × T=1500 setup as bulletproof experiment — directly
-comparable to previous results.
+Uses deterministic per-trial np_seed for true paired comparison.
+5 configs × 5 seeds × 8 algorithms × T=1500.
 """
 from __future__ import annotations
 
@@ -22,29 +18,28 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from algorithms import CTSBase, ALL_ALGORITHMS
+from algorithms import ALL_ALGORITHMS
 from paper_baselines import PAPER_BASELINES
 from safe_algorithms import SAFE_ALGORITHMS
+from masterpiece_algorithms import MASTERPIECE_ALGOS
 from oracle import GPTOracle
 from bulletproof_experiment import generate_bulletproof_configs, build_env, paired_analysis
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
 
-
-# ─── Full algorithm roster ────────────────────────────────────────────────
 ALL = {
+    # Baseline
     "cts_baseline": ALL_ALGORITHMS["cts_baseline"],
-    # Old winners
-    "OURS_B2_icpd": ALL_ALGORITHMS["B2_icpd_cts"],
+    # Current champion + strong baselines
+    "CHAMP_B2_icpd": ALL_ALGORITHMS["B2_icpd_cts"],
     "OURS_F2_query_design": ALL_ALGORITHMS["F2_query_design_cts"],
-    "OURS_A1_logprob": ALL_ALGORITHMS["A1_logprob_cts"],
-    # Paper baselines
-    "PAPER_ts_llm": PAPER_BASELINES["PAPER_ts_llm"],
-    "PAPER_llm_jump_start": PAPER_BASELINES["PAPER_llm_jump_start"],
     "PAPER_calibration_gated": PAPER_BASELINES["PAPER_calibration_gated"],
-    # NEW safe algorithms
-    **SAFE_ALGORITHMS,
+    # Masterpieces
+    "M1_b2_plus": MASTERPIECE_ALGOS["M1_b2_plus"],
+    "M2_correlated_cts": MASTERPIECE_ALGOS["M2_correlated_cts"],
+    "M3_b2_correlated": MASTERPIECE_ALGOS["M3_b2_correlated"],
+    "M4_b2_patched": MASTERPIECE_ALGOS["M4_b2_patched"],
 }
 NEEDS_ORACLE = {k for k in ALL if k != "cts_baseline"}
 
@@ -54,8 +49,6 @@ def run_single_trial(algo_name: str, config: dict, seed: int, T: int) -> dict:
     reward_rng = np.random.RandomState(config["env_seed"] * 10000 + seed + 999999)
 
     AlgoClass = ALL[algo_name]
-    # Deterministic per-(config, seed) np_seed — IDENTICAL across algorithms
-    # so Beta-sampling randomness is paired. Only algo logic differs.
     trial_np_seed = (config["env_seed"] * 10_000 + seed * 37) % (2**31)
     kwargs = {"d": config["d"], "m": config["m"], "np_seed": trial_np_seed}
 
@@ -64,8 +57,8 @@ def run_single_trial(algo_name: str, config: dict, seed: int, T: int) -> dict:
         oracle = GPTOracle(d=config["d"], m=config["m"])
         kwargs["oracle"] = oracle
 
-    # SAFE_S2_bounded_budget + S6_masterpiece need T_horizon param
-    if algo_name in ("SAFE_S2_bounded_budget", "SAFE_S6_masterpiece"):
+    # Algos with T_horizon param
+    if algo_name in ("M1_b2_plus", "M3_b2_correlated"):
         kwargs["T_horizon"] = T
 
     agent = AlgoClass(**kwargs)
@@ -113,7 +106,7 @@ def run_single_trial(algo_name: str, config: dict, seed: int, T: int) -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--T", type=int, default=1500)
-    parser.add_argument("--n-seeds", type=int, default=4)
+    parser.add_argument("--n-seeds", type=int, default=5)
     parser.add_argument("--workers", type=int, default=5)
     args = parser.parse_args()
 
@@ -126,7 +119,6 @@ def main():
     tasks = [(a, c, s) for a in algos for c in configs for s in range(args.n_seeds)]
     logger.info(f"Running {len(algos)} algorithms × {len(configs)} configs × "
                 f"{args.n_seeds} seeds = {len(tasks)} trials (T={args.T})")
-    logger.info(f"Algos: {algos}")
 
     all_results = []
     t_start = time.time()
@@ -146,7 +138,7 @@ def main():
                 if completed % 10 == 0 or completed == len(tasks):
                     logger.info(
                         f"[{completed}/{len(tasks)}] {algo:28s} cfg={config['config_id']} "
-                        f"seed={seed} regret={r['final_regret']:.1f} hits={r['cache_hits']} "
+                        f"seed={seed} regret={r['final_regret']:.1f} "
                         f"ETA={eta/60:.1f}min"
                     )
             except Exception as e:

@@ -21,10 +21,13 @@ class CTSBase:
     """Baseline Combinatorial Thompson Sampling. Beta(1,1) priors, no LLM."""
     name = "cts"
 
-    def __init__(self, d: int, m: int, rng: random.Random = None, **kw):
+    def __init__(self, d: int, m: int, rng: random.Random = None,
+                 np_seed: int = 0, **kw):
         self.d = d
         self.m = m
-        self.rng = rng or random.Random(0)
+        self.rng = rng or random.Random(np_seed)
+        # Per-trial numpy RNG for deterministic Beta sampling across threads
+        self.np_rng = np.random.RandomState(np_seed)
         self.alphas = np.ones(d)
         self.betas = np.ones(d)
         self.n_pulls = np.zeros(d)
@@ -36,7 +39,7 @@ class CTSBase:
         return self.total_reward / np.maximum(self.n_pulls, 1)
 
     def _sample(self) -> np.ndarray:
-        return np.random.beta(self.alphas, self.betas)
+        return self.np_rng.beta(self.alphas, self.betas)
 
     def select_arms(self) -> list[int]:
         samples = self._sample()

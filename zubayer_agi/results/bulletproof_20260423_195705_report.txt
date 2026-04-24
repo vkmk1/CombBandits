@@ -1,0 +1,55 @@
+====================================================================================================
+BULLETPROOF EXPERIMENT: 3 Winners + 4 Paper Baselines vs CTS
+====================================================================================================
+Trials per algo: 14
+Configs: 4 | Seeds per config: 4
+T: 1500
+
+--- OVERALL RANKING (lower regret = better) ---
+rank algorithm                        mean  stderr   median    vs_CTS
+1    cts_baseline                    228.8   14.48    217.7     +0.0%
+2    OURS_A1_logprob                 232.9   17.11    228.0     -1.8%
+3    OURS_F2_query_design            236.2   26.59    238.3     -3.3%
+4    PAPER_llm_jump_start            242.2   13.80    226.2     -5.9%
+5    PAPER_ts_llm                    250.4   21.80    221.2     -9.5%
+6    OURS_B2_icpd                    258.8   38.77    247.7    -13.1%
+7    PAPER_calibration_gated         268.6   39.25    212.1    -17.4%
+8    PAPER_llm_cucb_at               467.9   72.18    354.0   -104.5%
+
+--- PAIRED COMPARISON vs CTS (every algo on same (config, seed) as CTS) ---
+algorithm                       wins  losses   mean_diff  stderr  t_stat  wilcoxon_p
+OURS_A1_logprob                    9       5        -0.7   10.66   -0.07      0.4240
+OURS_F2_query_design              10       6        -7.5   28.17   -0.27      0.4545
+PAPER_llm_jump_start               6      10       -13.4    8.56   -1.57      0.4545
+PAPER_ts_llm                       5      11       -21.6   13.82   -1.56      0.2101
+OURS_B2_icpd                       9       7       -30.1   40.84   -0.74      0.8036
+PAPER_calibration_gated            8       8       -39.9   41.41   -0.96      1.1964
+PAPER_llm_cucb_at                  5      11      -239.1   80.31   -2.98      0.2101
+
+--- PER-CONFIG MEAN REGRET ---
+algorithm                        cfg_0     cfg_1     cfg_2     cfg_3
+cts_baseline                     204.4     179.7     311.6     219.2
+OURS_A1_logprob                  213.9     186.4     309.0     212.6
+OURS_F2_query_design             191.1     194.9     236.0     322.9
+PAPER_llm_jump_start             207.1     195.8     321.8     243.8
+PAPER_ts_llm                     223.6     184.5     365.0     228.4
+OURS_B2_icpd                     219.3     244.6     275.8     295.5
+PAPER_calibration_gated          221.9     152.3     271.0     429.2
+PAPER_llm_cucb_at                562.7     570.4     254.5     484.0
+
+--- WIN COUNT (lowest regret in (config, seed)) ---
+  OURS_F2_query_design        6/16
+  PAPER_calibration_gated     3/16
+  OURS_B2_icpd                3/16
+  PAPER_llm_cucb_at           2/16
+  OURS_A1_logprob             1/16
+  cts_baseline                1/16
+
+--- LLM COST (per trial average) ---
+  OURS_A1_logprob             calls=1.0  tokens=395
+  OURS_F2_query_design        calls=3.0  tokens=2021
+  PAPER_llm_jump_start        calls=1.0  tokens=1141
+  PAPER_ts_llm                calls=15.0  tokens=6356
+  OURS_B2_icpd                calls=8.0  tokens=5934
+  PAPER_calibration_gated     calls=8.0  tokens=9264
+  PAPER_llm_cucb_at           calls=15.0  tokens=6355

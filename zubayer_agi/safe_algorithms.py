@@ -206,7 +206,7 @@ class MixInCTS(CTSBase):
             return super().select_arms()
 
         p_llm = 1.0 / math.sqrt(max(self.t - self.T_warmup + 1, 1))
-        if np.random.random() < p_llm:
+        if self.np_rng.random() < p_llm:
             if self.t - self._last_query >= self.query_cooldown:
                 self._cached_picks = self.oracle.query_top_m(self.mu_hat.tolist())
                 self._last_query = self.t

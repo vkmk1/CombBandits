@@ -40,9 +40,7 @@ logger = logging.getLogger(__name__)
 
 # ─── NEW configs (different from smoke test) ──────────────────────────────
 def generate_bulletproof_configs() -> list[dict]:
-    """4 configs with NEW (gap_type, delta_min) combos, different env seeds."""
-    # Smoke test used: (uniform, 0.1), (uniform, 0.2), (hard, 0.15)
-    # New: different gaps + new env seeds → cache cannot match
+    """5 configs with diverse (gap_type, delta_min) combos."""
     configs = [
         {"config_id": 0, "d": 30, "m": 5, "gap_type": "uniform",
          "delta_min": 0.12, "env_seed": 5001},
@@ -52,6 +50,8 @@ def generate_bulletproof_configs() -> list[dict]:
          "delta_min": 0.10, "env_seed": 5041},
         {"config_id": 3, "d": 30, "m": 5, "gap_type": "hard",
          "delta_min": 0.20, "env_seed": 5067},
+        {"config_id": 4, "d": 30, "m": 5, "gap_type": "uniform",
+         "delta_min": 0.08, "env_seed": 5089},  # hardest uniform
     ]
     return configs
 

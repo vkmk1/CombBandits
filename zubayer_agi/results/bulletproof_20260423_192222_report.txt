@@ -1,0 +1,22 @@
+====================================================================================================
+BULLETPROOF EXPERIMENT: 3 Winners + 4 Paper Baselines vs CTS
+====================================================================================================
+Trials per algo: 16
+Configs: 4 | Seeds per config: 4
+T: 1500
+
+--- OVERALL RANKING (lower regret = better) ---
+rank algorithm                        mean  stderr   median    vs_CTS
+1    cts_baseline                    226.0   14.10    204.3     +0.0%
+
+--- PAIRED COMPARISON vs CTS (every algo on same (config, seed) as CTS) ---
+algorithm                       wins  losses   mean_diff  stderr  t_stat  wilcoxon_p
+
+--- PER-CONFIG MEAN REGRET ---
+algorithm                        cfg_0     cfg_1     cfg_2     cfg_3
+cts_baseline                     238.6     182.8     280.6     202.0
+
+--- WIN COUNT (lowest regret in (config, seed)) ---
+  cts_baseline                16/16
+
+--- LLM COST (per trial average) ---
