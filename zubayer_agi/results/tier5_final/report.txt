@@ -1,0 +1,35 @@
+====================================================================================================
+TIER 5 EXTENDED — 1920 trials | model=gpt-5.4
+====================================================================================================
+Algos: 6 | Configs: 16 | Seeds: 20 | T: 25000
+
+--- GLOBAL RANKING ---
+  1  ABLATION_random_kernel          mean=571.7  se=21.27  vs_CTS=+7.6%
+  2  N1_corr_full                    mean=573.1  se=19.37  vs_CTS=+7.4%
+  3  N4_robust_corr                  mean=598.9  se=23.76  vs_CTS=+3.2%
+  4  ABLATION_random_corr            mean=618.7  se=20.34  vs_CTS=+0.0%
+  5  CTS                             mean=619.0  se=15.16  vs_CTS=---
+  6  CUCB                            mean=2365.3  se=51.08  vs_CTS=+-282.1%
+
+--- PAIRED TESTS vs CTS ---
+  ABLATION_random_kernel          W/L=238/82  diff=47.2  wilcoxon_p=0.000000
+  N1_corr_full                    W/L=247/73  diff=45.9  wilcoxon_p=0.000000
+  N4_robust_corr                  W/L=206/114  diff=20.1  wilcoxon_p=0.000000
+  ABLATION_random_corr            W/L=170/150  diff=0.3  wilcoxon_p=0.091343
+  CUCB                            W/L=0/320  diff=-1746.3  wilcoxon_p=0.000000
+
+--- PER-(d,m) BREAKDOWN ---
+d                                25                        50             
+m                                 3            5            3            5
+algo                                                                      
+ABLATION_random_corr     404.345875   408.105375   796.049750   866.278750
+ABLATION_random_kernel   444.784375   356.819875   713.194625   772.078750
+CTS                      403.597125   408.470875   818.927500   844.855125
+CUCB                    1571.811625  1539.861125  3129.621625  3219.799125
+N1_corr_full             416.755625   388.116375   703.300375   784.115625
+N4_robust_corr           401.646375   452.016125   726.268875   815.584875
+
+--- KEY ABLATION: CorrCTS-Full vs RandomKernel ---
+  CorrCTS-Full beats RandomKernel: 159/319 trials
+  Mean advantage: -1.4 regret
+  Wilcoxon p = 0.981610

@@ -1,0 +1,145 @@
+\begin{thebibliography}{21}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Alamdari et~al.(2024)]{alamdari2024jumpstarting}
+Alamdari, P. et~al.
+\newblock Jump-starting bandits with {LLM}-generated prior knowledge.
+\newblock \emph{arXiv:2406.19317}, 2024.
+
+\bibitem[Aouali et~al.(2023)Aouali, Kveton, and Katariya]{kveton2023mixed}
+Aouali, I., Kveton, B., and Katariya, S.
+\newblock Mixed-effect thompson sampling.
+\newblock In \emph{Proceedings of the 26th International Conference on
+  Artificial Intelligence and Statistics (AISTATS)}, 2023.
+
+\bibitem[Bayley et~al.(2025)Bayley, Wilson, Cao, Aoki, and
+  Zhu]{bayley2025jumpstart}
+Bayley, A., Wilson, K.~H., Cao, Y., Aoki, R., and Zhu, X.
+\newblock Robustness of {LLM}-initialized bandits for recommendation under
+  noisy priors.
+\newblock In \emph{Workshop on Generative AI for Recommender Systems and
+  Personalization (GenAIRecP), KDD}, 2025.
+
+\bibitem[Berry(1941)]{berry1941accuracy}
+Berry, A.~C.
+\newblock The accuracy of the {G}aussian approximation to the sum of
+  independent variates.
+\newblock \emph{Transactions of the American Mathematical Society},
+  49:\penalty0 122--136, 1941.
+
+\bibitem[Chen et~al.(2013)Chen, Wang, and Yuan]{chen2013cucb}
+Chen, W., Wang, Y., and Yuan, Y.
+\newblock Combinatorial multi-armed bandit: General framework and applications.
+\newblock In \emph{Proceedings of the 30th International Conference on Machine
+  Learning (ICML)}, 2013.
+
+\bibitem[Combes et~al.(2015)Combes, Talebi, Proutiere, and
+  Lelarge]{combes2015combinatorial}
+Combes, R., Talebi, M.~S., Proutiere, A., and Lelarge, M.
+\newblock Combinatorial bandits revisited.
+\newblock In \emph{Advances in Neural Information Processing Systems 28
+  (NeurIPS)}, 2015.
+
+\bibitem[Gentile et~al.(2014)Gentile, Li, and Zappella]{gentile2014online}
+Gentile, C., Li, S., and Zappella, G.
+\newblock Online clustering of bandits.
+\newblock In \emph{Proceedings of the 31st International Conference on Machine
+  Learning (ICML)}, 2014.
+
+\bibitem[Gupta et~al.(2021)Gupta, Chaudhari, Joshi, and
+  Ya{\u{g}}an]{gupta2021correlated}
+Gupta, S., Chaudhari, S., Joshi, G., and Ya{\u{g}}an, O.
+\newblock Multi-armed bandits with correlated arms.
+\newblock \emph{IEEE Transactions on Information Theory}, 2021.
+
+\bibitem[Holm(1979)]{holm1979simple}
+Holm, S.
+\newblock A simple sequentially rejective multiple test procedure.
+\newblock \emph{Scandinavian Journal of Statistics}, 6\penalty0 (2):\penalty0
+  65--70, 1979.
+
+\bibitem[Hong et~al.(2020)Hong, Kveton, Zaheer, Chow, Ahmed, and
+  Boutilier]{hong2020latent}
+Hong, J., Kveton, B., Zaheer, M., Chow, Y., Ahmed, A., and Boutilier, C.
+\newblock Latent bandits revisited.
+\newblock In \emph{Advances in Neural Information Processing Systems 33
+  (NeurIPS)}, 2020.
+
+\bibitem[Krishnamurthy et~al.(2024)Krishnamurthy, Harris, Foster, and
+  Slivkins]{krishnamurthy2024canllms}
+Krishnamurthy, A., Harris, K., Foster, D.~J., and Slivkins, A.
+\newblock Can large language models explore in-context?
+\newblock In \emph{Advances in Neural Information Processing Systems 37
+  (NeurIPS)}, 2024.
+
+\bibitem[Kveton et~al.(2015)Kveton, Wen, Ashkan, and
+  Szepesv{\'a}ri]{kveton2015tight}
+Kveton, B., Wen, Z., Ashkan, A., and Szepesv{\'a}ri, C.
+\newblock Tight regret bounds for stochastic combinatorial semi-bandits.
+\newblock In \emph{Proceedings of the 18th International Conference on
+  Artificial Intelligence and Statistics (AISTATS)}, 2015.
+
+\bibitem[Lai \& Robbins(1985)Lai and Robbins]{lai1985asymptotically}
+Lai, T.~L. and Robbins, H.
+\newblock Asymptotically efficient adaptive allocation rules.
+\newblock \emph{Advances in Applied Mathematics}, 6\penalty0 (1):\penalty0
+  4--22, 1985.
+
+\bibitem[Perrault et~al.(2020)Perrault, Boursier, Valko, and
+  Perchet]{perrault2020statistical}
+Perrault, P., Boursier, E., Valko, M., and Perchet, V.
+\newblock Statistical efficiency of thompson sampling for combinatorial
+  semi-bandits.
+\newblock In \emph{Advances in Neural Information Processing Systems 33
+  (NeurIPS)}, 2020.
+
+\bibitem[Sandberg et~al.(2025)Sandberg, {\AA}kerblom, and
+  Haghir~Chehreghani]{sandberg2025bayesian}
+Sandberg, J., {\AA}kerblom, N., and Haghir~Chehreghani, M.
+\newblock Bayesian analysis of combinatorial {G}aussian process bandits.
+\newblock In \emph{Proceedings of the 13th International Conference on Learning
+  Representations (ICLR)}, 2025.
+
+\bibitem[Srinivas et~al.(2010)Srinivas, Krause, Kakade, and
+  Seeger]{srinivas2010gpucb}
+Srinivas, N., Krause, A., Kakade, S.~M., and Seeger, M.~W.
+\newblock Gaussian process optimization in the bandit setting: No regret and
+  experimental design.
+\newblock In \emph{Proceedings of the 27th International Conference on Machine
+  Learning (ICML)}, 2010.
+
+\bibitem[Sun et~al.(2025)Sun, Wang, Yang, Xiao, Lui, and Dai]{sun2025tsllm}
+Sun, J., Wang, Z., Yang, R., Xiao, C., Lui, J.~C., and Dai, Z.
+\newblock Large language model-enhanced multi-armed bandits.
+\newblock \emph{arXiv:2502.01118}, 2025.
+
+\bibitem[Swersky et~al.(2013)Swersky, Snoek, and Adams]{swersky2013multitask}
+Swersky, K., Snoek, J., and Adams, R.~P.
+\newblock Multi-task {B}ayesian optimization.
+\newblock In \emph{Advances in Neural Information Processing Systems 26
+  (NeurIPS)}, 2013.
+
+\bibitem[Wang \& Chen(2018)Wang and Chen]{wang2018cts}
+Wang, S. and Chen, W.
+\newblock Thompson sampling for combinatorial semi-bandits.
+\newblock In \emph{Proceedings of the 35th International Conference on Machine
+  Learning (ICML)}, 2018.
+
+\bibitem[Wilcoxon(1945)]{wilcoxon1945individual}
+Wilcoxon, F.
+\newblock Individual comparisons by ranking methods.
+\newblock \emph{Biometrics Bulletin}, 1\penalty0 (6):\penalty0 80--83, 1945.
+
+\bibitem[Wu et~al.(2020)Wu, Qiao, Chen, Wu, Qi, Lian, Liu, Xie, Gao, Wu, and
+  Zhou]{wu2020mind}
+Wu, F., Qiao, Y., Chen, J.-H., Wu, C., Qi, T., Lian, J., Liu, D., Xie, X., Gao,
+  J., Wu, W., and Zhou, M.
+\newblock {MIND}: A large-scale dataset for news recommendation.
+\newblock In \emph{Proceedings of the 58th Annual Meeting of the Association
+  for Computational Linguistics (ACL)}, 2020.
+
+\end{thebibliography}
